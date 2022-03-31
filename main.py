@@ -11,17 +11,17 @@ def now():
     return datetime.now().strftime("%d/%m/%y %H:%M:%S")
 
 ### INITIALIZE RECORDS ###
-with open("/home/pi/fun/live/lrecord.txt", "a+") as f:
+with open("record.txt", "a+") as f:
     pass
-record = open("/home/pi/fun/live/lrecord.txt", "r+")
+record = open("record.txt", "r+")
 l = record.read()
 if len(l) == 0:
     assigned = []
 else:
     assigned = l.split("\n")
 record.close()
-record = open("/home/pi/fun/live/lrecord.txt", "a+")
-log = open("/home/pi/fun/live/logs/main.log", "a+")
+record = open("record.txt", "a+")
+log = open("log.txt", "a+")
 
 
 ### INITIALIZE SELENIUM ###
@@ -51,12 +51,10 @@ while True:
 
     ### RENDER WEBSITE ###
     try:
-        print("start")
         urls = driver.find_elements(By.XPATH, "//a[@class='video-card no-decoration d-flex video-card-fluid flex-column']")
 
     except NoSuchElementException:
         sleep(1)
-        print("sleep")
         continue
 
 
@@ -69,11 +67,9 @@ while True:
         except NoSuchElementException:
             pass
     urls = [x.split('/')[-1] for x in live if x is not None]
-    print(urls)
 
     ### ASSIGN TMUX PANES ###
     for url in urls:
-        print("process", url)
         in_dict = url in url_to_pane
         if in_dict:
             try:
@@ -94,19 +90,17 @@ while True:
             log.write(f"{now()} {url} dropped, restarting\n")
 
         else:
+            print(f"{now()} {url} started")
             log.write(f"{now()} {url} started\n")
 
-        id = window.split_window(shell=f"python /home/pi/fun/live/lscrape.py {url} {url}").id
+        id = window.split_window(shell=f"chat_downloader https://www.youtube.com/watch?v={url} --output ldata/full/{url}.json").id
         window.select_layout('tiled')
         url_to_pane[url] = id
-
-    print("end")
 
     record.flush()
     log.flush()
 
     driver.refresh()
     sleep(1)
-    print("refresh")
 
 record.close()
