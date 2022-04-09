@@ -1,8 +1,8 @@
 from datetime import datetime
 import libtmux
-from selenium.common.exceptions import NoSuchElementException
-from selenium import webdriver
-from selenium.webdriver.common.by import By
+import requests
+import json
+import socket
 from subprocess import Popen
 from time import sleep
 import os
@@ -10,32 +10,7 @@ import os
 def now():
     return datetime.now().strftime("%d/%m/%y %H:%M:%S")
 
-### INITIALIZE RECORDS ###
-with open("record.txt", "a+") as f:
-    pass
-record = open("record.txt", "r+")
-l = record.read()
-if len(l) == 0:
-    assigned = []
-else:
-    assigned = l.split("\n")
-record.close()
-record = open("record.txt", "a+")
-log = open("log.txt", "a+")
-
-
-### INITIALIZE SELENIUM ###
-options = webdriver.ChromeOptions()
-options.add_argument("--headless"); # open Browser in maximized mode
-options.add_argument("disable-infobars"); # disabling infobars
-options.add_argument("--disable-extensions"); # disabling extensions
-options.add_argument("--disable-gpu"); # applicable to windows os only
-options.add_argument("--disable-dev-shm-usage"); # overcome limited resource problems
-options.add_argument("--no-sandbox"); # Bypass OS security model
-
-driver = webdriver.Chrome(options=options)
-driver.get("https://holodex.net")
-sleep(1)
+log = open(f"{os.path.dirname(os.path.realpath(__file__))}/logs/main.log", "a+")
 
 
 ### INITIALIZE LIBTMUX ###
@@ -49,37 +24,42 @@ url_to_pane = {}
 
 while True:
 
-    ### RENDER WEBSITE ###
+    ### GET CURRENT LIVE STREAMS ###
     try:
-        urls = driver.find_elements(By.XPATH, "//a[@class='video-card no-decoration d-flex video-card-fluid flex-column']")
-
-    except NoSuchElementException:
-        sleep(1)
+        streams = requests.get("https://holodex.net/api/v2/live?type=placeholder%2Cstream&org=Hololive").json()
+    except:
         continue
 
+    urls = []
 
-    ### GET CURRENT LIVE STREAMS ###
-    live = []
-    for url in urls:
-        try:
-            url.find_element(By.CLASS_NAME, "text-live")
-            live.append(url.get_attribute("href"))
-        except NoSuchElementException:
-            pass
-    urls = [x.split('/')[-1] for x in live if x is not None]
+    for stream in streams:
+        if stream['type'] == 'placeholder' or stream['status'] != 'live':
+            continue
+
+        if 'topic_id' in stream and stream['topic_id'] == 'membersonly':
+            continue
+        
+        path = f"{os.path.dirname(os.path.realpath(__file__))}/data/metadata/{stream['id']}.txt"
+        if not os.path.exists(path):
+            with open(path, 'w+') as f:
+                json.dump(stream, f, indent=4, ensure_ascii=False)
+
+        urls.append(stream['id'])
+
+    print(urls)
+
 
     ### ASSIGN TMUX PANES ###
     for url in urls:
+        print("process", url)
         in_dict = url in url_to_pane
         if in_dict:
             try:
                 has_pane = window.get_by_id(url_to_pane[url]) is not None
-            except Exception:
+            except:
                 has_pane = True
         else:
             has_pane = False
-
-        #has_pane = in_dict and (window.get_by_id(url_to_pane[url]) is not None)
 
         if has_pane:
             continue
@@ -90,17 +70,12 @@ while True:
             log.write(f"{now()} {url} dropped, restarting\n")
 
         else:
-            print(f"{now()} {url} started")
             log.write(f"{now()} {url} started\n")
 
-        id = window.split_window(shell=f"chat_downloader https://www.youtube.com/watch?v={url} --output ldata/full/{url}.json").id
+        id = window.split_window(shell=f"python {os.path.dirname(os.path.realpath(__file__))}/scrape.py {url} {url}").id
         window.select_layout('tiled')
         url_to_pane[url] = id
 
-    record.flush()
+    print("end")
+
     log.flush()
-
-    driver.refresh()
-    sleep(1)
-
-record.close()
