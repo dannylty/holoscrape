@@ -10,7 +10,15 @@ def now():
 
 base_path = os.path.dirname(os.path.realpath(__file__))
 
-chat = pytchat.create(video_id=sys.argv[1])
+retries = 0
+while retries < 5:
+    try:
+        chat = pytchat.create(video_id=sys.argv[1])
+        break
+    except pytchat.exceptions.InvalidVideoIdException:
+        retries += 1
+        continue
+
 path = f"{base_path}/data/full/{sys.argv[2]}_full.txt"
 path_s = f"{base_path}/data/simple/{sys.argv[2]}_short.txt"
 
@@ -23,7 +31,6 @@ log.write(f"{now()} {sys.argv[2]} started live scrape\n")
 log.flush()
 os.fsync(log)
 
-retries = 0
 
 while True:
 
