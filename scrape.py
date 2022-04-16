@@ -11,13 +11,17 @@ def now():
 base_path = os.path.dirname(os.path.realpath(__file__))
 
 retries = 0
-while retries < 5:
+while True:
     try:
         chat = pytchat.create(video_id=sys.argv[1])
         break
     except pytchat.exceptions.InvalidVideoIdException:
         retries += 1
+        if retries > 5:
+            quit()
         continue
+    except:
+        quit()
 
 path = f"{base_path}/data/full/{sys.argv[2]}_full.txt"
 path_s = f"{base_path}/data/simple/{sys.argv[2]}_short.txt"
