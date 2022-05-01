@@ -19,5 +19,5 @@ for stream in os.listdir("data/metadata"):
         key = {"full":"_full", "simple":"_short", "metadata":""}
         for folder in ["full", "simple", "metadata"]:
             subprocess.run(["mv", os.path.join("data", folder, stream[:-4] + key[folder] + '.txt'), os.path.join(share_path, folder, stream)])
-
+    print("transferring", stream)
 
