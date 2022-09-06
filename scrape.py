@@ -1,7 +1,10 @@
 from datetime import datetime
 import os
 import pytchat
+import pyrqlite.dbapi2 as db
 import time
+from socket import gethostname
+import sqlite3
 import sys
 from random import randint
 
@@ -35,6 +38,16 @@ log.write(f"{now()} {sys.argv[2]} started live scrape\n")
 log.flush()
 os.fsync(log)
 
+def post(dbconn, chat, video_id):
+    with dbconn.cursor() as cursor:
+        try:
+            cursor.execute('INSERT INTO chat_tab(video_id, chat_id, text, timestamp, author_name, author_id) VALUES(?, ?, ?, ?, ?, ?)',
+                (video_id, chat.id.replace('%3D', '='), chat.message, chat.timestamp, chat.author.name, chat.author.channelId))
+        except sqlite3.Error as e:
+            pass
+
+
+conn = db.connect(host=gethostname(), port=4001)
 
 while True:
 
@@ -50,6 +63,7 @@ while True:
             f.write(c.json())
             f.write("\n")
             f_s.write(f"{c.datetime} {c.message}\n")
+            post(conn, c, sys.argv[2])
             total_items += 1
         f.flush()
         f_s.flush()
@@ -77,6 +91,7 @@ while True:
         os.fsync(log)
         break
 
+conn.close()
 f.close()
 f_s.close()
 log.close()
