@@ -10,7 +10,7 @@ import os
 def now():
     return datetime.now().strftime("%d/%m/%y %H:%M:%S")
 
-log = open(f"{os.path.dirname(os.path.realpath(__file__))}/logs/main.log", "a+")
+log = open(f"/mnt/thumb/hololive/logs/main.log", "a+")
 
 
 ### INITIALIZE LIBTMUX ###
@@ -39,7 +39,7 @@ while True:
         if 'topic_id' in stream and stream['topic_id'] == 'membersonly':
             continue
         
-        path = f"{os.path.dirname(os.path.realpath(__file__))}/data/metadata/{stream['id']}.txt"
+        path = f"/mnt/thumb/hololive/data/metadata/{stream['id']}.txt"
         if not os.path.exists(path):
             with open(path, 'w+') as f:
                 json.dump(stream, f, indent=4, ensure_ascii=False)

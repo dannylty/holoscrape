@@ -8,7 +8,7 @@ from random import randint
 def now():
     return datetime.now().strftime("%d/%m/%y %H:%M:%S")
 
-base_path = os.path.dirname(os.path.realpath(__file__))
+base_path = "/mnt/thumb/hololive/"
 
 retries = 0
 while True:
@@ -23,8 +23,8 @@ while True:
     except:
         quit()
 
-path = f"{base_path}/data/full/{sys.argv[2]}_full.txt"
-path_s = f"{base_path}/data/simple/{sys.argv[2]}_short.txt"
+path = f"{base_path}data/full/{sys.argv[2]}_full.txt"
+path_s = f"{base_path}data/simple/{sys.argv[2]}_short.txt"
 
 f = open(path, 'a+')
 f_s = open(path_s, 'a+')
