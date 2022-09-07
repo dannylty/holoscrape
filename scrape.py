@@ -41,7 +41,7 @@ os.fsync(log)
 def post(dbconn, chat, video_id):
     with dbconn.cursor() as cursor:
         try:
-            cursor.execute('INSERT INTO chat_tab(video_id, chat_id, text, timestamp, author_name, author_id) VALUES(?, ?, ?, ?, ?, ?)',
+            cursor.execute('INSERT OR IGNORE INTO chat_tab(video_id, chat_id, text, timestamp, author_name, author_id) VALUES(?, ?, ?, ?, ?, ?)',
                 (video_id, chat.id.replace('%3D', '='), chat.message, chat.timestamp, chat.author.name, chat.author.channelId))
         except sqlite3.Error as e:
             pass
