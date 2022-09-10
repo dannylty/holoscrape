@@ -84,7 +84,7 @@ while True:
             log.write(f"{now()} {url} dropped, restarting\n")
 
         else:
-            print(f"{now()} {url} started\n")
+            print(f"{now()} {url} started")
             log.write(f"{now()} {url} started\n")
 
         id = window.split_window(shell=f"python {os.path.dirname(os.path.realpath(__file__))}/scrape.py {url} {url}").id
