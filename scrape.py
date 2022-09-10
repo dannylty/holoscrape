@@ -96,7 +96,7 @@ with conn.cursor() as cursor:
             chat.raise_for_status()
 
         except (pytchat.ChatDataFinished, pytchat.exceptions.NoContents) :
-            log.write(f"{now()} {sys.argv[2]} live finished with {total_items} items\n")
+            log.write(f"{now()} {sys.argv[2]} live finished with {total} items\n")
             break
             
         except Exception as e:
@@ -112,6 +112,8 @@ with conn.cursor() as cursor:
     if len(chats) > 0:
         post(cursor, tuple(chats), lock)
 
+for t in threads:
+    t.join()
 
 conn.close()
 f.close()
