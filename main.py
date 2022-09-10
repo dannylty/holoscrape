@@ -59,10 +59,14 @@ while True:
 
         urls.append(stream['id'])
 
+    to_del = []
     for u in url_to_pane.keys():
         if u not in urls:
-            del url_to_pane[u]
+            u.append(to_del)
             print(u, "finished")
+
+    for u in to_del:
+        del url_to_pane[u]
 
     ### ASSIGN TMUX PANES ###
     for url in urls:
