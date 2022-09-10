@@ -95,7 +95,7 @@ with conn.cursor() as cursor:
         try:
             chat.raise_for_status()
 
-        except (pytchat.ChatDataFinished, pytchat.exceptions.NoContents) :
+        except pytchat.ChatDataFinished :
             log.write(f"{now()} {sys.argv[2]} live finished with {total} items\n")
             break
             
@@ -106,7 +106,7 @@ with conn.cursor() as cursor:
                 log.write(f"{now()} {sys.argv[2]} live {type(e)} {str(e)} retrying...\n")
                 continue
 
-            log.write(f"{now()} {sys.argv[2]} live {type(e)} {str(e)}\n")
+            log.write(f"{now()} {sys.argv[2]} live {type(e)} {str(e)} finished with {total} items\n")
             break
     
     if len(chats) > 0:

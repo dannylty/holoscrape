@@ -59,12 +59,13 @@ while True:
 
         urls.append(stream['id'])
 
-    print(urls)
-
+    for u in url_to_pane.keys():
+        if u not in urls:
+            del url_to_pane[u]
+            print(u, "finished")
 
     ### ASSIGN TMUX PANES ###
     for url in urls:
-        print("process", url)
         in_dict = url in url_to_pane
         if in_dict:
             try:
@@ -83,13 +84,12 @@ while True:
             log.write(f"{now()} {url} dropped, restarting\n")
 
         else:
+            print(f"{now()} {url} started\n")
             log.write(f"{now()} {url} started\n")
 
         id = window.split_window(shell=f"python {os.path.dirname(os.path.realpath(__file__))}/scrape.py {url} {url}").id
         window.select_layout('tiled')
         url_to_pane[url] = id
-
-    print("end")
 
     log.flush()
 conn.close()
