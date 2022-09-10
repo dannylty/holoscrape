@@ -17,7 +17,7 @@ base_path = "/mnt/thumb/hololive/"
 retries = 0
 while True:
     try:
-        chat = pytchat.LiveChat(video_id=sys.argv[1], buffer=pytchat.core_multithread.buffer.Buffer(maxsize=200))
+        chat = pytchat.create(video_id=sys.argv[1])
         break
     except pytchat.exceptions.InvalidVideoIdException:
         retries += 1
@@ -28,26 +28,26 @@ while True:
         print(str(e))
         quit()
 
-path = f"{base_path}data/full/{sys.argv[2]}_full.txt"
 path_s = f"{base_path}data/simple/{sys.argv[2]}_short.txt"
 
-f = open(path, 'a+')
 f_s = open(path_s, 'a+')
 log = open(f"{base_path}/logs/scrape.log", "a+")
 total_items = 0
+total = 0
 
 lock = threading.Lock()
 
 log.write(f"{now()} {sys.argv[2]} started live scrape\n")
 
 def post(cursor, chats, lock):
-    print(len(set([c[1] for c in chats])))
     lock.acquire()
-    print(chats[0][1], "first", len(chats))
     try:
         cursor.executemany('INSERT OR IGNORE INTO chat_tab(video_id, chat_id, text, timestamp, author_name, author_id) VALUES(?, ?, ?, ?, ?, ?)',
             seq_of_parameters=chats)
     except sqlite3.Error as e:
+        print(str(e))
+    except Exception as e:
+        print(chats)
         print(str(e))
     lock.release()
 
@@ -64,18 +64,19 @@ with conn.cursor() as cursor:
 
         while chat.is_alive():
             for c in chat.get().items:
-                print(f"{total_items} {sys.argv[2]} {c.datetime} {c.message}")
-
+                #print(f"{total_items} {sys.argv[2]} {c.datetime} {c.message}")
+                print(".", end="", flush=True)
                 f_s.write(f"{total_items} {c.datetime} {c.message}\n")
                 chats.append((sys.argv[2], c.id.replace('%3D', '='), c.message, c.timestamp, c.author.name, c.author.channelId))
 
                 total_items += 1
             if len(chats) >= 100:
-                print("creating new thread")
-                print(len(chats))
+                print("\ncreating new thread")
+                lock.acquire()
                 t = threading.Thread(target=post, args=(cursor, tuple(chats), lock))
                 t.start()
                 threads.append(t)
+                lock.release()
                 if len(threads) > 3:
                     print("joining first thread")
                     s_time = time.time()
@@ -83,6 +84,9 @@ with conn.cursor() as cursor:
                     print("joining took", time.time() - s_time)
                     threads = threads[1:]
 
+                uniq = len(set([c[1] for c in chats]))
+                total += uniq
+                print(sys.argv[2], 'raw:', len(chats), 'unique:', uniq, 'total_uniq:', total)
                 chats = []
 
             else:
@@ -91,7 +95,7 @@ with conn.cursor() as cursor:
         try:
             chat.raise_for_status()
 
-        except pytchat.ChatDataFinished:
+        except (pytchat.ChatDataFinished, pytchat.exceptions.NoContents) :
             log.write(f"{now()} {sys.argv[2]} live finished with {total_items} items\n")
             break
             

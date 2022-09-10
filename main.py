@@ -52,6 +52,10 @@ while True:
                     (stream['id'], stream['title'], stream.get('topic_id', None), stream.get('start_actual', None), stream['channel']['id'], stream['channel']['name']))
             except sqlite3.Error as e:
                 pass
+            except Exception as e:
+                print(str(e))
+                print(stream)
+                exit(1)
 
         urls.append(stream['id'])
 
