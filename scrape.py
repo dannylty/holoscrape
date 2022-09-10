@@ -66,7 +66,7 @@ with conn.cursor() as cursor:
             for c in chat.get().items:
                 #print(f"{total_items} {sys.argv[2]} {c.datetime} {c.message}")
                 print(".", end="", flush=True)
-                f_s.write(f"{total_items} {c.datetime} {c.message}\n")
+                f_s.write(f"{sys.argv[2]} {c.id.replace('%3D', '=')} {c.datetime} {c.message}\n")
                 chats.append((sys.argv[2], c.id.replace('%3D', '='), c.message, c.timestamp, c.author.name, c.author.channelId))
 
                 total_items += 1
@@ -116,6 +116,5 @@ for t in threads:
     t.join()
 
 conn.close()
-f.close()
 f_s.close()
 log.close()

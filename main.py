@@ -62,8 +62,8 @@ while True:
     to_del = []
     for u in url_to_pane.keys():
         if u not in urls:
-            u.append(to_del)
-            print(u, "finished")
+            to_del.append(u)
+            print(f"{now()} {u} finished")
 
     for u in to_del:
         del url_to_pane[u]
