@@ -111,6 +111,9 @@ with conn.cursor() as cursor:
     
     if len(chats) > 0:
         post(cursor, tuple(chats), lock)
+        uniq = len(set([c[1] for c in chats]))
+        total += uniq
+        print(sys.argv[2], 'raw:', len(chats), 'unique:', uniq, 'total_uniq:', total)
 
 for t in threads:
     t.join()
