@@ -48,14 +48,14 @@ while True:
                 json.dump(stream, f, indent=4, ensure_ascii=False)
         with conn.cursor() as cursor:
             try:
-                cursor.execute('INSERT OR IGNORE INTO stream_tab(id, title, topic_id, start_actual, channel_id, channel_name) VALUES(?, ?, ?, ?, ?, ?)',
-                    (stream['id'], stream['title'], stream.get('topic_id', None), stream.get('start_actual', None), stream['channel']['id'], stream['channel']['name']))
+                cursor.execute('INSERT OR REPLACE INTO stream_tab(id, title, topic_id,  channel_id, channel_name) VALUES(?, ?, ?, ?, ?)',
+                    (stream['id'], stream['title'], stream.get('topic_id', None), stream['channel']['id'], stream['channel']['name']))
             except sqlite3.Error as e:
                 pass
             except Exception as e:
                 print(str(e))
                 print(stream)
-                exit(1)
+                pass
 
         urls.append(stream['id'])
 
