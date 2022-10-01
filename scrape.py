@@ -1,7 +1,6 @@
 from datetime import datetime
 import os
 import pytchat
-import pyrqlite.dbapi2 as db
 import time
 from socket import gethostname
 import sqlite3
@@ -54,66 +53,66 @@ def post(cursor, chats, lock):
 threads = []
 chats = []
 
-conn = db.connect(host=gethostname(), port=4001)
-with conn.cursor() as cursor:
-    while True:
+conn = sqlite3.connect("/mnt/thumb/hololive/db.sqlite3")
+cursor = conn.cursor()
+while True:
 
-        if chat.is_replay(): 
-            log.write(f"{now()} {sys.argv[2]} replay detected\n")
-            break
+    if chat.is_replay(): 
+        log.write(f"{now()} {sys.argv[2]} replay detected\n")
+        break
 
-        while chat.is_alive():
-            for c in chat.get().items:
-                #print(f"{total_items} {sys.argv[2]} {c.datetime} {c.message}")
-                print(".", end="", flush=True)
-                f_s.write(f"{sys.argv[2]} {c.id.replace('%3D', '=')} {c.datetime} {c.message}\n")
-                chats.append((sys.argv[2], c.id.replace('%3D', '='), c.message, c.timestamp, c.author.name, c.author.channelId))
+    while chat.is_alive():
+        for c in chat.get().items:
+            #print(f"{total_items} {sys.argv[2]} {c.datetime} {c.message}")
+            print(".", end="", flush=True)
+            f_s.write(f"{sys.argv[2]} {c.id.replace('%3D', '=')} {c.datetime} {c.message}\n")
+            chats.append((sys.argv[2], c.id.replace('%3D', '='), c.message, c.timestamp, c.author.name, c.author.channelId))
 
-                total_items += 1
-            if len(chats) >= 100:
-                print("\ncreating new thread")
-                lock.acquire()
-                t = threading.Thread(target=post, args=(cursor, tuple(chats), lock))
-                t.start()
-                threads.append(t)
-                lock.release()
-                if len(threads) > 3:
-                    print("joining first thread")
-                    s_time = time.time()
-                    threads[0].join()
-                    print("joining took", time.time() - s_time)
-                    threads = threads[1:]
+            total_items += 1
+        if len(chats) >= 100:
+            print("\ncreating new thread")
+            lock.acquire()
+            t = threading.Thread(target=post, args=(cursor, tuple(chats), lock))
+            t.start()
+            threads.append(t)
+            lock.release()
+            if len(threads) > 3:
+                print("joining first thread")
+                s_time = time.time()
+                threads[0].join()
+                print("joining took", time.time() - s_time)
+                threads = threads[1:]
 
-                uniq = len(set([c[1] for c in chats]))
-                total += uniq
-                print(sys.argv[2], 'raw:', len(chats), 'unique:', uniq, 'total_uniq:', total)
-                chats = []
+            uniq = len(set([c[1] for c in chats]))
+            total += uniq
+            print(sys.argv[2], 'raw:', len(chats), 'unique:', uniq, 'total_uniq:', total)
+            chats = []
 
-            else:
-                time.sleep(1)
+        else:
+            time.sleep(1)
 
-        try:
-            chat.raise_for_status()
+    try:
+        chat.raise_for_status()
 
-        except pytchat.ChatDataFinished :
-            log.write(f"{now()} {sys.argv[2]} live finished with {total} items\n")
-            break
-            
-        except Exception as e:
-            if retries < 5:
-                chat = pytchat.create(video_id=sys.argv[1])
-                retries += 1
-                log.write(f"{now()} {sys.argv[2]} live {type(e)} {str(e)} retrying...\n")
-                continue
+    except pytchat.ChatDataFinished :
+        log.write(f"{now()} {sys.argv[2]} live finished with {total} items\n")
+        break
+        
+    except Exception as e:
+        if retries < 5:
+            chat = pytchat.create(video_id=sys.argv[1])
+            retries += 1
+            log.write(f"{now()} {sys.argv[2]} live {type(e)} {str(e)} retrying...\n")
+            continue
 
-            log.write(f"{now()} {sys.argv[2]} live {type(e)} {str(e)} finished with {total} items\n")
-            break
-    
-    if len(chats) > 0:
-        post(cursor, tuple(chats), lock)
-        uniq = len(set([c[1] for c in chats]))
-        total += uniq
-        print(sys.argv[2], 'raw:', len(chats), 'unique:', uniq, 'total_uniq:', total)
+        log.write(f"{now()} {sys.argv[2]} live {type(e)} {str(e)} finished with {total} items\n")
+        break
+
+if len(chats) > 0:
+    post(cursor, tuple(chats), lock)
+    uniq = len(set([c[1] for c in chats]))
+    total += uniq
+    print(sys.argv[2], 'raw:', len(chats), 'unique:', uniq, 'total_uniq:', total)
 
 for t in threads:
     t.join()

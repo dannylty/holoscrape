@@ -8,7 +8,6 @@ from time import sleep
 import os
 import sqlite3
 from socket import gethostname
-import pyrqlite.dbapi2 as db
 
 def now():
     return datetime.now().strftime("%d/%m/%y %H:%M:%S")
@@ -24,7 +23,8 @@ if not session:
 window = session.list_windows()[0]
 url_to_pane = {}
 
-conn = db.connect(host=gethostname(), port=4001)
+conn = sqlite3.connect("/mnt/thumb/hololive/db.sqlite3")
+cursor = conn.cursor()
 while True:
 
     ### GET CURRENT LIVE STREAMS ###
@@ -46,16 +46,16 @@ while True:
         if not os.path.exists(path):
             with open(path, 'w+') as f:
                 json.dump(stream, f, indent=4, ensure_ascii=False)
-        with conn.cursor() as cursor:
-            try:
-                cursor.execute('INSERT OR REPLACE INTO stream_tab(id, title, topic_id,  channel_id, channel_name) VALUES(?, ?, ?, ?, ?)',
-                    (stream['id'], stream['title'], stream.get('topic_id', None), stream['channel']['id'], stream['channel']['name']))
-            except sqlite3.Error as e:
-                pass
-            except Exception as e:
-                print(str(e))
-                print(stream)
-                pass
+        
+        try:
+            cursor.execute('INSERT OR REPLACE INTO stream_tab(id, title, topic_id,  channel_id, channel_name) VALUES(?, ?, ?, ?, ?)',
+                (stream['id'], stream['title'], stream.get('topic_id', None), stream['channel']['id'], stream['channel']['name']))
+        except sqlite3.Error as e:
+            pass
+        except Exception as e:
+            print(str(e))
+            print(stream)
+            pass
 
         urls.append(stream['id'])
 
