@@ -38,7 +38,9 @@ lock = threading.Lock()
 
 log.write(f"{now()} {sys.argv[2]} started live scrape\n")
 
-def post(cursor, chats, lock):
+def post(chats, lock):
+    conn = sqlite3.connect("/mnt/thumb/hololive/db.sqlite3")
+    cursor = conn.cursor()
     lock.acquire()
     try:
         cursor.executemany('INSERT OR IGNORE INTO chat_tab(video_id, chat_id, text, timestamp, author_name, author_id) VALUES(?, ?, ?, ?, ?, ?)',
@@ -49,12 +51,12 @@ def post(cursor, chats, lock):
         print(chats)
         print(str(e))
     lock.release()
+    conn.commit()
+
 
 threads = []
 chats = []
 
-conn = sqlite3.connect("/mnt/thumb/hololive/db.sqlite3")
-cursor = conn.cursor()
 while True:
 
     if chat.is_replay(): 
@@ -72,7 +74,7 @@ while True:
         if len(chats) >= 100:
             print("\ncreating new thread")
             lock.acquire()
-            t = threading.Thread(target=post, args=(cursor, tuple(chats), lock))
+            t = threading.Thread(target=post, args=(tuple(chats), lock))
             t.start()
             threads.append(t)
             lock.release()
@@ -109,7 +111,7 @@ while True:
         break
 
 if len(chats) > 0:
-    post(cursor, tuple(chats), lock)
+    post(tuple(chats), lock)
     uniq = len(set([c[1] for c in chats]))
     total += uniq
     print(sys.argv[2], 'raw:', len(chats), 'unique:', uniq, 'total_uniq:', total)

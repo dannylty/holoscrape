@@ -50,6 +50,7 @@ while True:
         try:
             cursor.execute('INSERT OR REPLACE INTO stream_tab(id, title, topic_id,  channel_id, channel_name) VALUES(?, ?, ?, ?, ?)',
                 (stream['id'], stream['title'], stream.get('topic_id', None), stream['channel']['id'], stream['channel']['name']))
+            conn.commit()
         except sqlite3.Error as e:
             pass
         except Exception as e:
