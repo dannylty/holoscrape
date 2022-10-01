@@ -42,7 +42,7 @@ def post(cursor, chats, lock):
     lock.acquire()
     try:
         cursor.executemany('INSERT OR IGNORE INTO chat_tab(video_id, chat_id, text, timestamp, author_name, author_id) VALUES(?, ?, ?, ?, ?, ?)',
-            seq_of_parameters=chats)
+            chats)
     except sqlite3.Error as e:
         print(str(e))
     except Exception as e:
