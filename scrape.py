@@ -38,11 +38,12 @@ lock = threading.Lock()
 
 log.write(f"{now()} {sys.argv[2]} started live scrape\n")
 
-def post(conn, cursor, chats, lock):
+def post(conn, cursor, chats, lock, pointer):
     lock.acquire()
     try:
-        cursor.executemany(r'INSERT IGNORE INTO chat_tab VALUES (%s, %s, %s, %s, %s, %s)',
+        cursor.executemany(r'INSERT IGNORE INTO chat_tab_' + str(pointer) + r' VALUES (%s, %s, %s, %s, %s, %s)',
             chats)
+
         conn.commit()
     except Exception as e:
         print(chats)
@@ -60,7 +61,7 @@ conn = db.connect(
 )
 
 cursor = conn.cursor()
-
+pointer = randint(0, 9)
 while True:
 
     if chat.is_replay(): 
@@ -78,8 +79,9 @@ while True:
         if len(chats) >= 100:
             print("\ncreating new thread")
             lock.acquire()
-            t = threading.Thread(target=post, args=(conn, cursor, chats, lock))
+            t = threading.Thread(target=post, args=(conn, cursor, chats, lock, pointer))
             t.start()
+            pointer = (pointer + 1) % 10
             threads.append(t)
             lock.release()
             if len(threads) > 3:
@@ -115,7 +117,7 @@ while True:
         break
 
 if len(chats) > 0:
-    post(conn, cursor, chats, lock)
+    post(conn, cursor, chats, lock, pointer)
     uniq = len(set([c[1] for c in chats]))
     total += uniq
     print(sys.argv[2], 'raw:', len(chats), 'unique:', uniq, 'total_uniq:', total)
