@@ -41,7 +41,7 @@ log.write(f"{now()} {sys.argv[2]} started live scrape\n")
 def post(conn, cursor, chats, lock, pointer):
     lock.acquire()
     try:
-        cursor.executemany(r'INSERT IGNORE INTO chat_tab_' + str(pointer) + r' VALUES (%s, %s, %s, %s, %s, %s)',
+        cursor.executemany(r'INSERT IGNORE INTO chat_tab_' + str(pointer+10) + r' VALUES (%s, %s, %s, %s, %s, %s)',
             chats)
 
         conn.commit()
