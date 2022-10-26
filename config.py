@@ -20,9 +20,6 @@ class ConfigHandler:
             self.db_nshards = data['db_nshards']
 
         self.write_to_local = data['write_to_local']
-        if self.write_to_local:
-            self.data_path = data['data_path']
-
         self.local_path = data['local_path']
 
 def get_configs() -> ConfigHandler:
