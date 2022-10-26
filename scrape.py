@@ -8,10 +8,12 @@ import sys
 from random import randint
 import threading
 
+import config
+
 def now():
     return datetime.now().strftime("%d/%m/%y %H:%M:%S")
 
-base_path = "/mnt/thumb/hololive/"
+config_handler = config.get_configs()
 
 retries = 0
 while True:
@@ -27,10 +29,10 @@ while True:
         print(str(e))
         quit()
 
-path_s = f"{base_path}data/simple/{sys.argv[2]}_short.txt"
+path_s = f"{config_handler.local_path}data/simple/{sys.argv[2]}_short.txt"
 
 f_s = open(path_s, 'a+')
-log = open(f"{base_path}/logs/scrape.log", "a+")
+log = open(f"{config_handler.local_path}/logs/scrape.log", "a+")
 total_items = 0
 total = 0
 
@@ -54,10 +56,10 @@ threads = []
 chats = []
 
 conn = db.connect(
-    host='192.168.1.62',
-    user='pi',
-    password='holoscrape',
-    database='holoscrape'
+    host=config_handler.db_host,
+    user=config_handler.db_user,
+    password=config_handler.db_password,
+    database=config_handler.db_database
 )
 
 cursor = conn.cursor()

@@ -9,96 +9,104 @@ import os
 from socket import gethostname
 import mysql.connector as db
 
+import config
+
 def now():
     return datetime.now().strftime("%d/%m/%y %H:%M:%S")
+    
 
-log = open(f"/mnt/thumb/hololive/logs/main.log", "a+")
+def main():
+    config_handler = config.get_configs()
 
+    log = open(os.path.join(config_handler.local_path, "logs/main.log"), "a+")
 
-### INITIALIZE LIBTMUX ###
-server = libtmux.Server()
-session = server.find_where({"session_name": "s"})
-if not session:
-    session = server.new_session("s", window_name="w")
-window = session.list_windows()[0]
-url_to_pane = {}
+    ### INITIALIZE LIBTMUX ###
+    server = libtmux.Server()
+    session = server.find_where({"session_name": "s"})
+    if not session:
+        session = server.new_session("s", window_name="w")
+    window = session.list_windows()[0]
+    url_to_pane = {}
 
-conn = db.connect(
-    host='192.168.1.62',
-    user='pi',
-    password='holoscrape',
-    database='holoscrape'
-)
+    conn = db.connect(
+        host=config_handler.db_host,
+        user=config_handler.db_user,
+        password=config_handler.db_password,
+        database=config_handler.db_database
+    )
 
-cursor = conn.cursor()
+    cursor = conn.cursor()
 
-while True:
+    while True:
 
-    ### GET CURRENT LIVE STREAMS ###
-    try:
-        streams = requests.get("https://holodex.net/api/v2/live?type=placeholder%2Cstream&org=Hololive").json()
-    except:
-        continue
-
-    urls = []
-
-    for stream in streams:
-        if stream['type'] == 'placeholder' or stream['status'] != 'live':
-            continue
-
-        if 'topic_id' in stream and stream['topic_id'] == 'membersonly':
-            continue
-        
-        path = f"/mnt/thumb/hololive/data/metadata/{stream['id']}.txt"
-        if not os.path.exists(path):
-            with open(path, 'w+') as f:
-                json.dump(stream, f, indent=4, ensure_ascii=False)
+        ### GET CURRENT LIVE STREAMS ###
         try:
-            cursor.execute(r'REPLACE INTO stream_tab(id, title, topic_id,  channel_id, channel_name) VALUES(%s, %s, %s, %s, %s)',
-                (stream['id'], stream['title'], stream.get('topic_id', None), stream['channel']['id'], stream['channel']['name']))
-            conn.commit()
-        except Exception as e:
-            print(str(e))
-            print(stream)
-            pass
-
-        urls.append(stream['id'])
-
-    to_del = []
-    for u in url_to_pane.keys():
-        if u not in urls:
-            to_del.append(u)
-            print(f"{now()} {u} finished")
-
-    for u in to_del:
-        del url_to_pane[u]
-
-    ### ASSIGN TMUX PANES ###
-    for url in urls:
-        in_dict = url in url_to_pane
-        if in_dict:
-            try:
-                has_pane = window.get_by_id(url_to_pane[url]) is not None
-            except:
-                has_pane = True
-        else:
-            has_pane = False
-
-        if has_pane:
+            streams = requests.get("https://holodex.net/api/v2/live?type=placeholder%2Cstream&org=Hololive").json()
+        except:
             continue
-        
-        if in_dict:
-            # we had a pane for this, livestream is still up, but pane is dead
-            print(f"{now()} {url} dropped, restarting")
-            log.write(f"{now()} {url} dropped, restarting\n")
 
-        else:
-            print(f"{now()} {url} started")
-            log.write(f"{now()} {url} started\n")
+        urls = []
 
-        id = window.split_window(shell=f"python {os.path.dirname(os.path.realpath(__file__))}/scrape.py {url} {url}").id
-        window.select_layout('tiled')
-        url_to_pane[url] = id
+        for stream in streams:
+            if stream['type'] == 'placeholder' or stream['status'] != 'live':
+                continue
 
-    log.flush()
-conn.close()
+            if 'topic_id' in stream and stream['topic_id'] == 'membersonly':
+                continue
+            
+            metadata_path = os.path.join(config_handler.local_path, f"data/metadata/{stream['id']}.txt")
+            if not os.path.exists(metadata_path):
+                with open(metadata_path, 'w+') as f:
+                    json.dump(stream, f, indent=4, ensure_ascii=False)
+            try:
+                cursor.execute(r'REPLACE INTO stream_tab(id, title, topic_id,  channel_id, channel_name) VALUES(%s, %s, %s, %s, %s)',
+                    (stream['id'], stream['title'], stream.get('topic_id', None), stream['channel']['id'], stream['channel']['name']))
+                conn.commit()
+            except Exception as e:
+                print(str(e))
+                print(stream)
+                pass
+
+            urls.append(stream['id'])
+
+        to_del = []
+        for u in url_to_pane.keys():
+            if u not in urls:
+                to_del.append(u)
+                print(f"{now()} {u} finished")
+
+        for u in to_del:
+            del url_to_pane[u]
+
+        ### ASSIGN TMUX PANES ###
+        for url in urls:
+            in_dict = url in url_to_pane
+            if in_dict:
+                try:
+                    has_pane = window.get_by_id(url_to_pane[url]) is not None
+                except:
+                    has_pane = True
+            else:
+                has_pane = False
+
+            if has_pane:
+                continue
+            
+            if in_dict:
+                # we had a pane for this, livestream is still up, but pane is dead
+                print(f"{now()} {url} dropped, restarting")
+                log.write(f"{now()} {url} dropped, restarting\n")
+
+            else:
+                print(f"{now()} {url} started")
+                log.write(f"{now()} {url} started\n")
+
+            id = window.split_window(shell=f"python {os.path.dirname(os.path.realpath(__file__))}/scrape.py {url} {url}").id
+            window.select_layout('tiled')
+            url_to_pane[url] = id
+
+        log.flush()
+    conn.close()
+
+if __name__ == '__main__':
+    main()
