@@ -1,0 +1,12 @@
+{
+    "write_to_db": true,
+    "db_host": "192.168.1.62",
+    "db_port": 3306,
+    "db_user": "pi",
+    "db_password": "holoscrape",
+    "db_database": "holoscrape",
+    "db_table": "chat_tab",
+    "db_nshards": 20,
+    "write_to_local": true,
+    "local_path": "/mnt/thumb/hololive/"
+}
