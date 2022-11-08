@@ -5,8 +5,9 @@
     "db_user": "pi",
     "db_password": "holoscrape",
     "db_database": "holoscrape",
-    "db_table": "chat_tab",
-    "db_nshards": 20,
+    "db_table": "chat_tab_v2",
+    "db_nshards": 4,
     "write_to_local": true,
-    "local_path": "/mnt/thumb/hololive/"
+    "local_path": "/mnt/thumb/hololive/data/simple/",
+    "log_path": "/mnt/thumb/hololive/logs/"
 }

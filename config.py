@@ -21,6 +21,7 @@ class ConfigHandler:
 
         self.write_to_local = data['write_to_local']
         self.local_path = data['local_path']
+        self.log_path = data['log_path']
 
 def get_configs() -> ConfigHandler:
     if os.path.isfile("config.json"):
