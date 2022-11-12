@@ -1,1 +1,1 @@
-tmux new-session -d -s 's' 'python /home/pi/fun/live/main.py'
+tmux new-session -d -s 's' -c python3 /home/pi/fun/live/main.py
