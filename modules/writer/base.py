@@ -1,9 +1,10 @@
-import config
+from modules import config
 
 class Writer:
-    def __init__(self, config: config.ConfigHandler, video_id: str):
-        if not self.validate_configs(config):
+    def __init__(self, c: config.ConfigHandler, video_id: str):
+        if not self.validate_configs(c):
             raise Exception()
+        self.configs = c
 
         self.video_id = video_id
 

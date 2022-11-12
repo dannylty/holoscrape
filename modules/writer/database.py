@@ -5,7 +5,7 @@ from random import randint
 from socket import gethostname
 import threading
 
-import config
+from modules import config
 from .base import Writer
 
 class DatabaseWriter(Writer):
@@ -23,6 +23,7 @@ class DatabaseWriter(Writer):
         self.nshards = config.db_nshards
         self.shard_pointer = randint(0, config.db_nshards - 1)
         self.db_table = config.db_table
+        self.db_stream_table = config.db_stream_table
 
         self.chat_buffer = []
         self.threads = []
@@ -30,7 +31,7 @@ class DatabaseWriter(Writer):
         self.hostname = gethostname() # for logging in db
         
     def validate_configs(self, config: config.ConfigHandler):
-        required_attrs = ["db_host", "db_port", "db_user", "db_password", "db_database", "db_table", "db_nshards"]
+        required_attrs = ["db_host", "db_port", "db_user", "db_password", "db_database", "db_table", "db_stream_table", "db_nshards"]
         
         for attr in required_attrs:
             if not hasattr(config, attr) or getattr(config, attr) is None:
@@ -61,7 +62,7 @@ class DatabaseWriter(Writer):
             self.hostname
         ))
 
-        if len(self.chat_buffer) >= 10:
+        if len(self.chat_buffer) >= 100:
             self.lock.acquire()
             t = threading.Thread(target=self.post)
             t.start()
@@ -70,6 +71,14 @@ class DatabaseWriter(Writer):
             self.advance_shard_pointer()
             if len(self.threads) > 3:
                 self.threads.pop(0).join()
+
+    def process_stream(self, stream):
+        try:
+            self.cursor.execute(r'REPLACE INTO stream_tab(id, title, topic_id,  channel_id, channel_name) VALUES(%s, %s, %s, %s, %s)',
+                    (stream['id'], stream['title'], stream.get('topic_id', None), stream['channel']['id'], stream['channel']['name']))
+            self.conn.commit()
+        except Exception as e:
+            logging.error(str(e))
 
     def post(self):
         self.lock.acquire()
@@ -81,7 +90,6 @@ class DatabaseWriter(Writer):
             logging.error(str(e))
         
         self.lock.release()
-
 
     def finalise(self):
         self.post()

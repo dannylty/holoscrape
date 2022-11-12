@@ -17,6 +17,7 @@ class ConfigHandler:
             self.db_password = data['db_password']
             self.db_database = data['db_database']
             self.db_table = data['db_table']
+            self.db_stream_table = data['db_stream_table']
             self.db_nshards = data['db_nshards']
 
         self.write_to_local = data['write_to_local']

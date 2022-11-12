@@ -9,14 +9,17 @@ import os
 from socket import gethostname
 import mysql.connector as db
 
-import config
+from modules.config import get_configs
+from modules.indexer.holodex import HolodexIndexer
+from modules.writer.database import DatabaseWriter
+from modules.writer.filesystem import FilesystemWriter
 
 def now():
     return datetime.now().strftime("%d/%m/%y %H:%M:%S")
     
 
 def main():
-    config_handler = config.get_configs()
+    config_handler = get_configs()
 
     log = open(os.path.join(config_handler.local_path, "logs/main.log"), "a+")
 
@@ -37,37 +40,19 @@ def main():
 
     cursor = conn.cursor()
 
+    stream_indexer = HolodexIndexer()
+    writers = [DatabaseWriter(config_handler, None), FilesystemWriter(config_handler, None)]
+
     while True:
 
-        ### GET CURRENT LIVE STREAMS ###
-        try:
-            streams = requests.get("https://holodex.net/api/v2/live?type=placeholder%2Cstream&org=Hololive").json()
-        except:
-            continue
-
-        urls = []
+        streams = stream_indexer.get_streams()
+        if not streams: continue
 
         for stream in streams:
-            if stream['type'] == 'placeholder' or stream['status'] != 'live':
-                continue
+           for w in writers:
+                w.process_stream(stream)
 
-            if 'topic_id' in stream and stream['topic_id'] == 'membersonly':
-                continue
-            
-            metadata_path = os.path.join(config_handler.local_path, f"data/metadata/{stream['id']}.txt")
-            if not os.path.exists(metadata_path):
-                with open(metadata_path, 'w+') as f:
-                    json.dump(stream, f, indent=4, ensure_ascii=False)
-            try:
-                cursor.execute(r'REPLACE INTO stream_tab(id, title, topic_id,  channel_id, channel_name) VALUES(%s, %s, %s, %s, %s)',
-                    (stream['id'], stream['title'], stream.get('topic_id', None), stream['channel']['id'], stream['channel']['name']))
-                conn.commit()
-            except Exception as e:
-                print(str(e))
-                print(stream)
-                pass
-
-            urls.append(stream['id'])
+        urls = [s['id'] for s in streams]
 
         to_del = []
         for u in url_to_pane.keys():

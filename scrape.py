@@ -7,9 +7,9 @@ from socket import gethostname
 import sys
 import threading
 
-import config
-from writer.database import DatabaseWriter
-from writer.filesystem import FilesystemWriter
+from modules import config
+from modules.writer.database import DatabaseWriter
+from modules.writer.filesystem import FilesystemWriter
 
 def now():
     return datetime.now().strftime("%d/%m/%y %H:%M:%S")
@@ -87,4 +87,9 @@ class Scraper:
 
 if __name__ == "__main__":
     s = Scraper(sys.argv[1])
-    s.run()
+    try:
+        s.run()
+    except KeyboardInterrupt:
+        print("Cleaning up..")
+        for writer in s.writers:
+            writer.finalise()
