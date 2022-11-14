@@ -76,10 +76,10 @@ class Scraper:
                 if retries < 5:
                     chat = pytchat.create(video_id=self.video_id)
                     retries += 1
-                    log.write(f"{now()} {self.video_id} live {type(e)} {str(e)} retrying...\n")
+                    logging.warn(f"{now()} {self.video_id} live {type(e)} {str(e)} retrying...\n")
                     continue
 
-                log.write(f"{now()} {self.video_id} live {type(e)} {str(e)} finished items\n")
+                logging.info(f"{now()} {self.video_id} live {type(e)} {str(e)} finished items\n")
                 break
 
         for writer in self.writers:
