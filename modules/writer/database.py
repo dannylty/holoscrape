@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import mysql.connector as db
 import os
@@ -67,10 +68,13 @@ class DatabaseWriter(Writer):
         except Exception as e:
             logging.error(str(e))
 
+    def get_shard(self):
+        return str(int(hashlib.sha1(self.video_id).hexdigest()[:8], 16) % self.nshards)
+
     def post(self):
         print("start post")
         try:
-            query = r'INSERT INTO ' + self.db_table + '_' + str(hash(self.video_id) % self.nshards) + r' VALUES (%s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE source = CONCAT(source, ' + f"' {self.hostname}\')"
+            query = r'INSERT INTO ' + self.db_table + '_' + self.get_shard() + r' VALUES (%s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE source = CONCAT(source, ' + f"' {self.hostname}\')"
             self.cursor.executemany(query, self.chat_buffer)
             self.conn.commit()
         except Exception as e:
