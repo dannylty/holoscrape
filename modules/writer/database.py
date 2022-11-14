@@ -58,7 +58,7 @@ class DatabaseWriter(Writer):
             chat.author.name,
             chat.author.channelId,
             self.hostname
-        ))
+            ))
 
         if len(self.chat_buffer) >= 100:
             self.post()
@@ -76,7 +76,7 @@ class DatabaseWriter(Writer):
     def post(self):
         print("start post")
         try:
-            query = r'INSERT IGNORE INTO ' + self.db_table + '_' + str(self.shard_pointer) + r' VALUES (%s, %s, %s, %s, %s, %s, %s)'
+            query = r'INSERT INTO ' + self.db_table + '_' + str(self.shard_pointer) + r' VALUES (%s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE source = CONCAT(source, ' + f"' {self.hostname}\')"
             self.cursor.executemany(query, self.chat_buffer)
             self.conn.commit()
         except Exception as e:
