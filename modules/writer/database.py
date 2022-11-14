@@ -18,7 +18,8 @@ class DatabaseWriter(Writer):
             database=config.db_database
         )
         self.cursor = self.conn.cursor()
-        self.shard = str(int(hashlib.sha1(video_id.encode()).hexdigest()[:8], 16) % config.db_nshards)
+        if video_id:
+            self.shard = str(int(hashlib.sha1(video_id.encode()).hexdigest()[:8], 16) % config.db_nshards)
         self.db_table = config.db_table
         self.db_stream_table = config.db_stream_table
 
