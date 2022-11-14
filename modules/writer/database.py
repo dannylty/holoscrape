@@ -3,7 +3,6 @@ import mysql.connector as db
 import os
 from random import randint
 from socket import gethostname
-import threading
 
 from modules import config
 from .base import Writer
@@ -12,7 +11,6 @@ class DatabaseWriter(Writer):
     def __init__(self, config: config.ConfigHandler, video_id: str):
         super().__init__(config, video_id)
 
-        self.lock = threading.Lock()
         self.conn = db.connect(
             host=config.db_host,
             user=config.db_user,
@@ -63,14 +61,9 @@ class DatabaseWriter(Writer):
         ))
 
         if len(self.chat_buffer) >= 100:
-            self.lock.acquire()
-            t = threading.Thread(target=self.post)
-            t.start()
-            self.threads.append(t)
-            self.lock.release() # probably race condition on shard pointer but who cares
+            self.post()
             self.advance_shard_pointer()
-            if len(self.threads) > 3:
-                self.threads.pop(0).join()
+            self.chat_buffer = []
 
     def process_stream(self, stream):
         try:
@@ -81,15 +74,14 @@ class DatabaseWriter(Writer):
             logging.error(str(e))
 
     def post(self):
-        self.lock.acquire()
+        print("start post")
         try:
             query = r'INSERT IGNORE INTO ' + self.db_table + '_' + str(self.shard_pointer) + r' VALUES (%s, %s, %s, %s, %s, %s, %s)'
             self.cursor.executemany(query, self.chat_buffer)
             self.conn.commit()
         except Exception as e:
             logging.error(str(e))
-        
-        self.lock.release()
+        print("end post")
 
     def finalise(self):
         self.post()
