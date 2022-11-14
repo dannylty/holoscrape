@@ -11,6 +11,7 @@ import mysql.connector as db
 
 from modules.config import get_configs
 from modules.indexer.holodex import HolodexIndexer
+from modules.indexer.nijidex import NijisanjiIndexer
 from modules.writer.database import DatabaseWriter
 from modules.writer.filesystem import FilesystemWriter
 
@@ -40,13 +41,17 @@ def main():
 
     cursor = conn.cursor()
 
-    stream_indexer = HolodexIndexer()
-    writers = [DatabaseWriter(config_handler, None), FilesystemWriter(config_handler, None)]
+    stream_indexers = (HolodexIndexer(), NijisanjiIndexer())
+    writers = (DatabaseWriter(config_handler, None), FilesystemWriter(config_handler, None))
 
     while True:
 
-        streams = stream_indexer.get_streams()
-        if not streams: continue
+        streams = []
+        for indexer in stream_indexers:
+            streams += indexer.get_streams()
+        if not streams:
+            sleep(5)
+            continue
 
         for stream in streams:
            for w in writers:
