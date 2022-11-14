@@ -18,7 +18,7 @@ class DatabaseWriter(Writer):
             database=config.db_database
         )
         self.cursor = self.conn.cursor()
-        self.nshards = config.db_nshards
+        self.shard = str(int(hashlib.sha1(video_id.encode()).hexdigest()[:8], 16) % config.db_nshards)
         self.db_table = config.db_table
         self.db_stream_table = config.db_stream_table
 
@@ -68,13 +68,10 @@ class DatabaseWriter(Writer):
         except Exception as e:
             logging.error(str(e))
 
-    def get_shard(self):
-        return str(int(hashlib.sha1(self.video_id).hexdigest()[:8], 16) % self.nshards)
-
     def post(self):
         print("start post")
         try:
-            query = r'INSERT INTO ' + self.db_table + '_' + self.get_shard() + r' VALUES (%s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE source = CONCAT(source, ' + f"' {self.hostname}\')"
+            query = r'INSERT INTO ' + self.db_table + '_' + self.shard + r' VALUES (%s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE source = CONCAT(source, ' + f"' {self.hostname}\')"
             self.cursor.executemany(query, self.chat_buffer)
             self.conn.commit()
         except Exception as e:
