@@ -1,7 +1,6 @@
 import logging
 import mysql.connector as db
 import os
-from random import randint
 from socket import gethostname
 
 from modules import config
@@ -19,7 +18,6 @@ class DatabaseWriter(Writer):
         )
         self.cursor = self.conn.cursor()
         self.nshards = config.db_nshards
-        self.shard_pointer = randint(0, config.db_nshards - 1)
         self.db_table = config.db_table
         self.db_stream_table = config.db_stream_table
 
@@ -46,9 +44,6 @@ class DatabaseWriter(Writer):
         
         return config.write_to_local
 
-    def advance_shard_pointer(self):
-        self.shard_pointer = (self.shard_pointer + 1) % self.nshards
-
     def process(self, chat):
         self.chat_buffer.append((
             self.video_id,
@@ -62,7 +57,6 @@ class DatabaseWriter(Writer):
 
         if len(self.chat_buffer) >= 100:
             self.post()
-            self.advance_shard_pointer()
             self.chat_buffer = []
 
     def process_stream(self, stream):
@@ -76,7 +70,7 @@ class DatabaseWriter(Writer):
     def post(self):
         print("start post")
         try:
-            query = r'INSERT INTO ' + self.db_table + '_' + str(self.shard_pointer) + r' VALUES (%s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE source = CONCAT(source, ' + f"' {self.hostname}\')"
+            query = r'INSERT INTO ' + self.db_table + '_' + str(hash(self.video_id) % self.nshards) + r' VALUES (%s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE source = CONCAT(source, ' + f"' {self.hostname}\')"
             self.cursor.executemany(query, self.chat_buffer)
             self.conn.commit()
         except Exception as e:
