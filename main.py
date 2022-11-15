@@ -37,7 +37,7 @@ def main():
         writers.append(DatabaseWriter(config_handler, None))
     if config_handler.write_to_local:
         for folder in ['simple', 'metadata']:
-            os.mkdir(os.path.join(config_handler.local_path, folder), exist_ok=True)
+            os.makedirs(os.path.join(config_handler.local_path, folder), exist_ok=True)
         writers.append(FilesystemWriter(config_handler, None))
 
     while True:
