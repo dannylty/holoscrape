@@ -7,7 +7,6 @@ from subprocess import Popen
 from time import sleep
 import os
 from socket import gethostname
-import mysql.connector as db
 
 from modules.config import get_configs
 from modules.indexer.holodex import HolodexIndexer
@@ -22,7 +21,7 @@ def now():
 def main():
     config_handler = get_configs()
 
-    log = open(os.path.join(config_handler.local_path, "logs/main.log"), "a+")
+    log = open(os.path.join(config_handler.log_path, "main.log"), "a+")
 
     ### INITIALIZE LIBTMUX ###
     server = libtmux.Server()
@@ -32,20 +31,16 @@ def main():
     window = session.list_windows()[0]
     url_to_pane = {}
 
-    conn = db.connect(
-        host=config_handler.db_host,
-        user=config_handler.db_user,
-        password=config_handler.db_password,
-        database=config_handler.db_database
-    )
-
-    cursor = conn.cursor()
-
     stream_indexers = (HolodexIndexer(), NijisanjiIndexer())
-    writers = (DatabaseWriter(config_handler, None), FilesystemWriter(config_handler, None))
+    writers = []
+    if config_handler.write_to_db:
+        writers.append(DatabaseWriter(config_handler, None))
+    if config_handler.write_to_local:
+        for folder in ['simple', 'metadata']:
+            os.mkdir(os.path.join(config_handler.local_path, folder))
+        writers.append(FilesystemWriter(config_handler, None))
 
     while True:
-
         streams = []
         for indexer in stream_indexers:
             streams += indexer.get_streams()
@@ -91,12 +86,11 @@ def main():
                 print(f"{now()} {url} started")
                 log.write(f"{now()} {url} started\n")
 
-            id = window.split_window(shell=f"python {os.path.dirname(os.path.realpath(__file__))}/scrape.py {url} {url}").id
+            id = window.split_window(shell=f"python3 {os.path.dirname(os.path.realpath(__file__))}/scrape.py {url} {url}").id
             window.select_layout('tiled')
             url_to_pane[url] = id
 
         log.flush()
-    conn.close()
 
 if __name__ == '__main__':
     main()

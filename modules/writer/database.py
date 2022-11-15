@@ -47,7 +47,7 @@ class DatabaseWriter(Writer):
             self.logger.warning("config has no attribute for DatabaseWriter")
             return False
         
-        return config.write_to_local
+        return config.write_to_db
 
     def generate_batch(self):
         self.next_batch = randint(30,100)
