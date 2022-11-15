@@ -1,11 +1,11 @@
 import hashlib
-import logging
 import mysql.connector as db
 import os
 from random import randint
 from socket import gethostname
 
 from modules import config
+from modules.logger.base import createLogger
 from .base import Writer
 
 class DatabaseWriter(Writer):
@@ -36,7 +36,7 @@ class DatabaseWriter(Writer):
         
         for attr in required_attrs:
             if not hasattr(config, attr) or getattr(config, attr) is None:
-                logging.error(f"{attr} missing")
+                self.logger.error(f"{attr} missing")
                 return False
 
         return True
@@ -44,7 +44,7 @@ class DatabaseWriter(Writer):
     @staticmethod
     def check_config_enabled(config: config.ConfigHandler):
         if not hasattr(config, 'write_to_db'):
-            logging.warning("config has no attribute for DatabaseWriter")
+            self.logger.warning("config has no attribute for DatabaseWriter")
             return False
         
         return config.write_to_local
@@ -74,17 +74,17 @@ class DatabaseWriter(Writer):
                     (stream['id'], stream['title'], stream.get('topic_id', None), stream['channel']['id'], stream['channel']['name']))
             self.conn.commit()
         except Exception as e:
-            logging.error(str(e))
+            self.logger.error(str(e))
 
     def post(self):
-        logging.info("posting", self.next_batch, "chats...")
+        self.logger.info(f"posting {self.next_batch} chats...")
         try:
             query = r'INSERT INTO ' + self.db_table + '_' + self.shard + r' VALUES (%s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE source = CONCAT(source, ' + f"' {self.hostname}\')"
             self.cursor.executemany(query, self.chat_buffer)
             self.conn.commit()
         except Exception as e:
-            logging.error(str(e))
-        logging.info("done")
+            self.logger.error(str(e))
+        self.logger.info("done")
 
     def finalise(self):
         self.post()

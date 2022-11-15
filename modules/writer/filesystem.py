@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 
 from modules import config
@@ -14,11 +13,11 @@ class FilesystemWriter(Writer):
         
     def validate_configs(self, c: config.ConfigHandler):
         if not hasattr(c, 'local_path'):
-            logging.error("local_path missing")
+            self.logging.error("local_path missing")
             return False
 
         if not os.path.exists(c.local_path):
-            logging.error("local_path not a valid directory")
+            self.logging.error("local_path not a valid directory")
             return False
 
         return True
@@ -26,7 +25,7 @@ class FilesystemWriter(Writer):
     @staticmethod
     def check_config_enabled(c: config.ConfigHandler):
         if not hasattr(c, 'write_to_local'):
-            logging.warning('config has no attribute for FilesystemWriter')
+            self.logging.warning('config has no attribute for FilesystemWriter')
             return False
         
         return c.write_to_local

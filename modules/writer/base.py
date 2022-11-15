@@ -1,4 +1,7 @@
+import logging
+
 from modules import config
+from modules.logger.base import createLogger
 
 class Writer:
     def __init__(self, c: config.ConfigHandler, video_id: str):
@@ -7,6 +10,8 @@ class Writer:
         self.configs = c
 
         self.video_id = video_id
+
+        self.logger = createLogger(logging.INFO, video_id, __name__)
 
     def validate_configs(self, config: config.ConfigHandler):
         return True
