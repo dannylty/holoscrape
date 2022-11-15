@@ -8,7 +8,7 @@ class NijisanjiIndexer(Indexer):
         try:
             streams = requests.get("https://holodex.net/api/v2/live?type=placeholder%2Cstream&org=Nijisanji").json()
         except:
-            return
+            return []
 
         ret = []
 
