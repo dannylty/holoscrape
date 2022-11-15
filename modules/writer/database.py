@@ -2,6 +2,7 @@ import hashlib
 import logging
 import mysql.connector as db
 import os
+from random import randint
 from socket import gethostname
 
 from modules import config
@@ -27,7 +28,9 @@ class DatabaseWriter(Writer):
         self.threads = []
 
         self.hostname = gethostname() # for logging in db
-        
+
+        self.next_batch = randint(30, 100)
+
     def validate_configs(self, config: config.ConfigHandler):
         required_attrs = ["db_host", "db_port", "db_user", "db_password", "db_database", "db_table", "db_stream_table", "db_nshards"]
         
@@ -41,10 +44,13 @@ class DatabaseWriter(Writer):
     @staticmethod
     def check_config_enabled(config: config.ConfigHandler):
         if not hasattr(config, 'write_to_db'):
-            logging.warning('config has no attribute for DatabaseWriter')
+            logging.warning("config has no attribute for DatabaseWriter")
             return False
         
         return config.write_to_local
+
+    def generate_batch(self):
+        self.next_batch = randint(30,100)
 
     def process(self, chat):
         self.chat_buffer.append((
@@ -57,9 +63,10 @@ class DatabaseWriter(Writer):
             self.hostname
             ))
 
-        if len(self.chat_buffer) >= 100:
+        if len(self.chat_buffer) >= self.next_batch:
             self.post()
             self.chat_buffer = []
+            self.generate_batch()
 
     def process_stream(self, stream):
         try:
@@ -70,14 +77,14 @@ class DatabaseWriter(Writer):
             logging.error(str(e))
 
     def post(self):
-        print("start post")
+        logging.info("posting", self.next_batch, "chats...")
         try:
             query = r'INSERT INTO ' + self.db_table + '_' + self.shard + r' VALUES (%s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE source = CONCAT(source, ' + f"' {self.hostname}\')"
             self.cursor.executemany(query, self.chat_buffer)
             self.conn.commit()
         except Exception as e:
             logging.error(str(e))
-        print("end post")
+        logging.info("done")
 
     def finalise(self):
         self.post()
