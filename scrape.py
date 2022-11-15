@@ -18,7 +18,12 @@ class Scraper:
     def __init__(self, video_id):
         self.video_id = video_id
         self.config = config.get_configs()
-        logging.basicConfig(filename=os.path.join(self.config.log_path, video_id, ".log"), encoding='utf-8', level=logging.DEBUG), 
+
+        log_path = os.path.join(self.config.log_path, video_id + ".log")
+        with open(log_path, 'w+') as f:
+            pass
+
+        logging.basicConfig(filename=log_path, encoding='utf-8', level=logging.DEBUG), 
         self.writers = []
 
         if DatabaseWriter.check_config_enabled(self.config):
