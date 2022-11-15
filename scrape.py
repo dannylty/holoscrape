@@ -23,7 +23,7 @@ class Scraper:
         with open(log_path, 'w+') as f:
             pass
 
-        logging.basicConfig(filename=log_path, encoding='utf-8', level=logging.DEBUG), 
+        logging.basicConfig(filename=log_path, encoding='utf-8', level=logging.INFO), 
         self.writers = []
 
         if DatabaseWriter.check_config_enabled(self.config):
