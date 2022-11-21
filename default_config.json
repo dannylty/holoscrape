@@ -5,7 +5,7 @@
     "db_user": "pi",
     "db_password": "holoscrape",
     "db_database": "holoscrape",
-    "db_table": "chat_tab_v3",
+    "db_table": "chat_tab",
     "db_stream_table": "stream_tab",
     "db_nshards": 30,
     "write_to_local": true,
