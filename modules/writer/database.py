@@ -78,6 +78,7 @@ class DatabaseWriter(Writer):
 
     def post(self):
         self.logger.info(f"posting {self.next_batch} chats...")
+        print(f"posting {self.next_batch} chats...")
         try:
             query = r'INSERT INTO ' + self.db_table + '_' + self.shard + r' VALUES (%s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE source = CONCAT(source, ' + f"' {self.hostname}\')"
             self.cursor.executemany(query, self.chat_buffer)
@@ -85,6 +86,7 @@ class DatabaseWriter(Writer):
         except Exception as e:
             self.logger.error(str(e))
         self.logger.info("done")
+        print("done")
 
     def finalise(self):
         self.post()
