@@ -1,6 +1,6 @@
 {
     "write_to_db": true,
-    "db_host": "192.168.1.62",
+    "db_host": "192.168.1.2",
     "db_port": 3306,
     "db_user": "pi",
     "db_password": "holoscrape",

@@ -1,3 +1,7 @@
+CREATE USER 'pi'@'%' IDENTIFIED BY 'holoscrape';
+GRANT ALL PRIVILEGE ON holoscrape.* TO 'pi'@'%';
+FLUSH PRIVILEGES;
+
 CREATE TABLE chat_tab_v3_0 (
 	video_id varchar(255),
 	chat_id varchar(255) NOT NULL PRIMARY KEY,
