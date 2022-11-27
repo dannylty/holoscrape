@@ -58,6 +58,7 @@ class Scraper:
         self.logger.info(f"{now()} {self.video_id} started live scrape")
         
         retries = 0
+        idx = 0
         while True:
             if self.video.is_replay(): 
                 self.logger.info(f"{now()} {self.video_id} replay detected")
@@ -65,7 +66,8 @@ class Scraper:
 
             while self.video.is_alive():
                 for c in self.video.get().items:
-                    print(self.video_id, c.id.replace('%3D', '=')[-10:], c.message)
+                    print(self.video_id, idx, c.message)
+                    idx += 1
 
                     for writer in self.writers:
                         writer.process(c)
