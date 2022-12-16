@@ -28,9 +28,9 @@ If `write_to_db` or `write_to_local` is `false`, their respective subconfigs can
 ```
 {
     "write_to_db": true, <-- Mandatory
-    "db_host": "192.168.1.62",
+    "db_host": <host>,
     "db_port": 3306,
-    "db_user": "pi",
+    "db_user": <user>,
     "db_password": "holoscrape",
     "db_database": "holoscrape",
     "db_table": "chat_tab_v3",
