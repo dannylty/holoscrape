@@ -1,5 +1,5 @@
 CREATE USER 'pi'@'%' IDENTIFIED BY 'holoscrape';
-GRANT ALL PRIVILEGE ON holoscrape.* TO 'pi'@'%';
+GRANT ALL PRIVILEGES ON holoscrape.* TO 'pi'@'%';
 FLUSH PRIVILEGES;
 
 CREATE TABLE chat_tab_v3_0 (
