@@ -87,10 +87,10 @@ def main():
                 log.write(f"{now()} {url} started\n")
 
             id = window.split_window(shell=f"python3 {os.path.dirname(os.path.realpath(__file__))}/scrape.py {url} {url}").id
-            window.select_layout('tiled')
+            session.list_windows()[0].select_layout('tiled')
             url_to_pane[url] = id
 
-        log.flush()
+        sleep(5)
 
 if __name__ == '__main__':
     main()
