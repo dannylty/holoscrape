@@ -47,6 +47,3 @@ If `write_to_db` or `write_to_local` is `false`, their respective subconfigs can
 ```
 python3 main.py
 ```
-
-### License
-This software is published under the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html) license. 
