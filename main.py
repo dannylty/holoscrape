@@ -21,9 +21,9 @@ def main():
 
     ### INITIALIZE LIBTMUX ###
     server = libtmux.Server()
-    session = server.find_where({"session_name": "s"})
+    session = server.find_where({"session_name": "holoscrape"})
     if not session:
-        session = server.new_session("s", window_name="w")
+        session = server.new_session("holoscrape", window_name="main.py")
     window = session.list_windows()[0]
     url_to_pane = {}
 
