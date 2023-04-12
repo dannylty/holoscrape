@@ -4,7 +4,7 @@
 
 <p align="center"><kbd><img src="https://user-images.githubusercontent.com/63136392/201944147-5576e35c-a241-471c-b0bd-1110b08a3cca.png" width="828" height="507"/></kbd></p>
 
-[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Tests](https://github.com/dannylty/holoscrape/actions/workflows/tests.yaml/badge.svg)](https://github.com/dannylty/holoscrape/actions/workflows/tests.yaml)[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/) 
 
 
