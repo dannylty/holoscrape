@@ -1,9 +1,7 @@
 from datetime import datetime
 import libtmux
-from subprocess import Popen
 from time import sleep
 import os
-from socket import gethostname
 
 from modules.config import get_configs
 from modules.indexer.holodex import HolodexIndexer
