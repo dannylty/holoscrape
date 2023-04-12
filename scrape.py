@@ -3,9 +3,7 @@ import logging
 import os
 import pytchat
 import time
-from socket import gethostname
 import sys
-import threading
 
 from modules import config
 from modules.logger.base import createLogger

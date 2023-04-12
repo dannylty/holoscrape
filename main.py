@@ -18,6 +18,7 @@ def now():
 def main():
     config_handler = get_configs()
 
+    os.makedirs(os.path.join(config_handler.log_path), exist_ok=True)
     log = open(os.path.join(config_handler.log_path, "main.log"), "a+")
 
     ### INITIALIZE LIBTMUX ###

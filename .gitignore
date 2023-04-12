@@ -2,6 +2,7 @@
 ./db
 ./default_config.json
 
+*.txt
 *.log
 
 # Byte-compiled / optimized / DLL files

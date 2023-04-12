@@ -2,5 +2,5 @@
     "write_to_db": false,
     "write_to_local": true,
     "local_path": "./data/",
-    "log_path": "./main.log"
+    "log_path": "./logs/"
 }
