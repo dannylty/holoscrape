@@ -10,6 +10,8 @@ class FilesystemWriter(Writer):
 
         if video_id:
             self.file = open(os.path.join(c.local_path, "simple", video_id + ".txt"), 'a')
+
+        self.counter = 0
         
     def validate_configs(self, c: config.ConfigHandler):
         if not hasattr(c, 'local_path'):
@@ -32,6 +34,10 @@ class FilesystemWriter(Writer):
 
     def process(self, chat):
         self.file.write(f"{self.video_id} {chat.id.replace('%3D', '=')} {chat.datetime} {chat.message}\n")
+        if self.counter == 10:
+            self.file.flush()
+            self.counter = 0
+        self.counter += 1
 
     def process_stream(self, stream):
         metadata_path = os.path.join(self.configs.local_path, "metadata", stream['id'] + ".txt")
