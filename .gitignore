@@ -1,6 +1,8 @@
 ./hololive
 ./db
 ./default_config.json
+./data
+./logs
 
 *.txt
 *.log
