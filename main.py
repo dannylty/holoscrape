@@ -1,8 +1,5 @@
 from datetime import datetime
 import libtmux
-import requests
-import json
-import socket
 from subprocess import Popen
 from time import sleep
 import os
