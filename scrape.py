@@ -39,7 +39,7 @@ class Scraper:
     
     def get_video(self):
         self.video = None
-        for tries in range(5):
+        for _ in range(5):
             try:
                 self.video = pytchat.create(video_id=self.video_id)
                 break
@@ -83,7 +83,7 @@ class Scraper:
                 
             except Exception as e:
                 if retries < 5:
-                    chat = pytchat.create(video_id=self.video_id)
+                    self.video = pytchat.create(video_id=self.video_id)
                     retries += 1
                     self.logger.warning(f"{now()} {self.video_id} live {type(e)} {str(e)} retrying...")
                     continue
