@@ -24,6 +24,8 @@ class ConfigHandler:
             self.local_path = data['local_path']
             self.log_path = data['log_path']
 
+            self.holodex_apikey = data['apikey']
+
 def get_configs() -> ConfigHandler:
     return ConfigHandler("config.json")
     

@@ -7,8 +7,10 @@ class HolodexIndexer(Indexer):
     def get_streams(self):
         if not hasattr(self.configs, 'apikey'):
             return []
+        apikey = self.configs.holodex_apikey
+
         try:
-            streams = requests.get("https://holodex.net/api/v2/live?type=placeholder%2Cstream&org=Hololive", headers={"X-APIKEY": self.configs['apikey']}).json()
+            streams = requests.get("https://holodex.net/api/v2/live?type=placeholder%2Cstream&org=Hololive", headers={"X-APIKEY": apikey}).json()
         except:
             return []
 
