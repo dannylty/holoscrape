@@ -5,8 +5,10 @@ from .base import Indexer
 
 class NijisanjiIndexer(Indexer):
     def get_streams(self):
+        if not hasattr(self.configs, 'apikey'):
+            return []
         try:
-            streams = requests.get("https://holodex.net/api/v2/live?type=placeholder%2Cstream&org=Nijisanji").json()
+            streams = requests.get("https://holodex.net/api/v2/live?type=placeholder%2Cstream&org=Nijisanji", headers={"X-APIKEY": self.configs['apikey']}).json()
         except:
             return []
 
