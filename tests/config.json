@@ -2,5 +2,6 @@
     "write_to_db": false,
     "write_to_local": true,
     "local_path": "./data/",
-    "log_path": "./logs/"
+    "log_path": "./logs/",
+    "apikey": "holodex_api_key"
 }
