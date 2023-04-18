@@ -22,7 +22,7 @@ sudo apt install tmux
 pip3 install -r requirements.txt
 ```
 ### Configuring
-Config reading defaults to `default_config.json`.
+Config reading defaults to `config.json`.
 
 If `write_to_db` or `write_to_local` is `false`, their respective subconfigs can be omitted.
 
@@ -40,8 +40,10 @@ If `write_to_db` or `write_to_local` is `false`, their respective subconfigs can
 
     "write_to_local": true, <-- Mandatory
     "local_path": "/mnt/thumb/hololive/data/",
+
+    "log_path": "/mnt/thumb/hololive/logs/", <-- Mandatory
     
-    "log_path": "/mnt/thumb/hololive/logs/" <-- Mandatory
+    "apikey": "holodex_api_key"
 }
 ```
 ### Running (in tmux)
