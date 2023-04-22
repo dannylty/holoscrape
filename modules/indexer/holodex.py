@@ -5,7 +5,7 @@ from .base import Indexer
 
 class HolodexIndexer(Indexer):
     def get_streams(self):
-        if not hasattr(self.configs, 'apikey'):
+        if not hasattr(self.configs, 'holodex_apikey'):
             return []
         apikey = self.configs.holodex_apikey
 
