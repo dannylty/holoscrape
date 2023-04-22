@@ -27,7 +27,7 @@ def main():
     window = session.list_windows()[0]
     url_to_pane = {}
 
-    stream_indexers = (HolodexIndexer(), NijisanjiIndexer())
+    stream_indexers = (HolodexIndexer(config_handler), NijisanjiIndexer(config_handler))
     writers = []
     if config_handler.write_to_db:
         writers.append(DatabaseWriter(config_handler, None))
