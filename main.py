@@ -41,7 +41,7 @@ def main():
         for indexer in stream_indexers:
             streams += indexer.get_streams()
         if not streams:
-            sleep(5)
+            sleep(60)
             continue
 
         for stream in streams:
@@ -86,7 +86,7 @@ def main():
             session.list_windows()[0].select_layout('tiled')
             url_to_pane[url] = id
 
-        sleep(5)
+        sleep(60)
 
 if __name__ == '__main__':
     main()
