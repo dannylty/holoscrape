@@ -4,6 +4,7 @@
 ./data
 ./logs
 ./.vs
+./scripts
 
 *.txt
 *.log
