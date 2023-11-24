@@ -1,7 +1,7 @@
 {
     "write_to_db": false,
     "write_to_local": true,
-    "local_path": "./data/",
-    "log_path": "./logs/",
-    "apikey": "holodex_api_key"
+    "local_path": "./test_data/",
+    "log_path": "./test_logs/",
+    "apikey": "holodex_api_key"  
 }
