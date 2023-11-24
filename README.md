@@ -42,10 +42,12 @@ If `write_to_db` or `write_to_local` is `false`, their respective subconfigs can
     "local_path": "/mnt/thumb/hololive/data/",
 
     "log_path": "/mnt/thumb/hololive/logs/", <-- Mandatory
-    
-    "apikey": "holodex_api_key"
 }
 ```
+
+The in-built Holodex indexers require API keys to be supplied, and they are given by
+the env var `HOLODEX_API_KEY`.
+
 ### Running (in tmux)
 ```
 python3 main.py
