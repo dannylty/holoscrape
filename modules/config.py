@@ -4,7 +4,7 @@ import os
 class ConfigHandler:
     def __init__(self, json_file_path: str):
         self.parse_json(json_file_path)
-        self.holodex_apikey = os.getenv('HOLODEX_API_KEY')
+        self.parse_envvars()
 
     def parse_json(self, json_file_path):
         with open(json_file_path, 'r') as f:
@@ -24,6 +24,11 @@ class ConfigHandler:
             self.write_to_local = data['write_to_local']
             self.local_path = data['local_path']
             self.log_path = data['log_path']
+
+    def parse_envvars(self):
+        holodex_apikey = os.getenv('HOLODEX_API_KEY')
+        if holodex_apikey:
+            self.holodex_apikey = holodex_apikey
 
 def get_configs() -> ConfigHandler:
     return ConfigHandler("config.json")
