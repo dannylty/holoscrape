@@ -22,7 +22,9 @@ class ConfigHandler:
                 self.db_nshards = data['db_nshards']
 
             self.write_to_local = data['write_to_local']
-            self.local_path = data['local_path']
+            if self.write_to_local:
+                self.local_path = data['local_path']
+                
             self.log_path = data['log_path']
 
     def parse_envvars(self):
