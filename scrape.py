@@ -17,7 +17,7 @@ class Scraper:
     def __init__(self, video_id):
         self.video_id = video_id
         self.config = config.get_configs()
-        self.logger = createLogger(logging.INFO, video_id, __name__)
+        self.logger = createLogger(logging.INFO, video_id, "holoscrape")
 
         log_path = os.path.join(self.config.log_path, video_id + ".log")
         with open(log_path, 'w+') as f:
