@@ -10,7 +10,7 @@ class BaseLogger:
             log_path = os.path.join(configs.log_path, video_id + ".log")
             with open(log_path, 'a+') as f:
                 pass
-            logging.basicConfig(filename=log_path, encoding='utf-8', level=logging.DEBUG)
+            logging.basicConfig(filename=log_path, encoding='utf-8', level=logging.WARNING)
             self.logger = logging.getLogger(name)
             self.logger.setLevel(level)
 
