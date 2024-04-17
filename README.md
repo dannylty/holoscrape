@@ -1,6 +1,6 @@
 <p align="center"><img src="https://user-images.githubusercontent.com/63136392/201978731-094594a5-13c5-4407-8a0f-6c0dc50bed99.png"/></p>
 
-<p align="center">Automated YouTube stream chat scraper and visualiser.</p>
+<p align="center">Automated Extensible YouTube Livestream Chat Scraper and Visualiser.</p>
 
 <p align="center"><kbd><img src="https://user-images.githubusercontent.com/63136392/201944147-5576e35c-a241-471c-b0bd-1110b08a3cca.png" width="828" height="507"/></kbd></p>
 
