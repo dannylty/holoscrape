@@ -3,7 +3,6 @@
 ./default_config.json
 ./data
 ./logs
-./.vs
 ./scripts
 
 *.txt
