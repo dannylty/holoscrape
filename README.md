@@ -22,6 +22,9 @@ sudo apt install tmux
 pip3 install -r requirements.txt
 ```
 ### Configuring
+The in-built Holodex indexers require API keys to be supplied, and they are given by
+the env var `HOLODEX_API_KEY`.
+
 Config reading defaults to `config.json`.
 
 If `write_to_db` or `write_to_local` is `false`, their respective subconfigs can be omitted.
@@ -30,25 +33,24 @@ If `write_to_db` or `write_to_local` is `false`, their respective subconfigs can
 {
     "write_to_db": true, <-- Mandatory
     "db_host": <host>,
-    "db_port": 3306,
-    "db_user": <user>,
-    "db_password": "holoscrape",
-    "db_database": "holoscrape",
-    "db_table": "chat_tab_v3",
+    "db_port": <port>,
+    "db_user": "username",
+    "db_password": "password",
+    "db_database": "password",
+    "db_table": "example_tab",
     "db_stream_table": "stream_tab",
     "db_nshards": 30,
 
     "write_to_local": true, <-- Mandatory
-    "local_path": "/mnt/thumb/hololive/data/",
+    "local_path": "/path/to/data/",
 
-    "log_path": "/mnt/thumb/hololive/logs/", <-- Mandatory
+    "log_path": "/path/to/logs/", <-- Mandatory
 }
 ```
-
-The in-built Holodex indexers require API keys to be supplied, and they are given by
-the env var `HOLODEX_API_KEY`.
+An example database schema is given in `init.sql` that works with the example configs above. If you don't know your way around it, just turn `write_to_db` off.
 
 ### Running (in tmux)
 ```
 python3 main.py
+'ctrl-b s' to change to the scraping window
 ```
