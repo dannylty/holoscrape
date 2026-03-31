@@ -1,6 +1,5 @@
 from datetime import datetime
 import logging
-import os
 import pytchat
 import time
 import sys
@@ -19,10 +18,6 @@ class Scraper:
         self.config = config.get_configs()
         self.logger = createLogger(logging.INFO, video_id, "holoscrape")
 
-        log_path = os.path.join(self.config.log_path, video_id + ".log")
-        with open(log_path, 'w+') as f:
-            pass
-
         self.writers = []
 
         if DatabaseWriter.check_config_enabled(self.config):
@@ -31,9 +26,9 @@ class Scraper:
         if FilesystemWriter.check_config_enabled(self.config):
             self.writers.append(FilesystemWriter(self.config, video_id))
 
-        if len(self.writers) <= 0:
+        if not self.writers:
             self.logger.error("no writers configured")
-            quit()
+            sys.exit(1)
     
     def get_video(self):
         self.video = None
@@ -45,10 +40,10 @@ class Scraper:
                 continue
             except Exception as e:
                 self.logger.error(str(e))
-                quit()
+                sys.exit(1)
         if self.video is None:
             self.logger.error("can't retrieve video")
-            quit()
+            sys.exit(1)
 
     def run(self):
         self.get_video()

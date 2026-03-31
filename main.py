@@ -65,7 +65,7 @@ def main():
             if in_dict:
                 try:
                     has_pane = window.get_by_id(url_to_pane[url]) is not None
-                except:
+                except Exception:
                     has_pane = True
             else:
                 has_pane = False
@@ -77,10 +77,12 @@ def main():
                 # we had a pane for this, livestream is still up, but pane is dead
                 print(f"{now()} {url} dropped, restarting")
                 log.write(f"{now()} {url} dropped, restarting\n")
+                log.flush()
 
             else:
                 print(f"{now()} {url} started")
                 log.write(f"{now()} {url} started\n")
+                log.flush()
 
             id = window.split_window(shell=f"python3 {os.path.dirname(os.path.realpath(__file__))}/scrape.py {url} {url}").id
             session.list_windows()[0].select_layout('tiled')

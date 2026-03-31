@@ -15,22 +15,18 @@ class FilesystemWriter(Writer):
         
     def validate_configs(self, c: config.ConfigHandler):
         if not hasattr(c, 'local_path'):
-            self.logging.error("local_path missing")
+            self.logger.error("local_path missing")
             return False
 
         if not os.path.exists(c.local_path):
-            self.logging.error("local_path not a valid directory")
+            self.logger.error("local_path not a valid directory")
             return False
 
         return True
 
     @staticmethod
     def check_config_enabled(c: config.ConfigHandler):
-        if not hasattr(c, 'write_to_local'):
-            self.logging.warning('config has no attribute for FilesystemWriter')
-            return False
-        
-        return c.write_to_local
+        return hasattr(c, 'write_to_local') and c.write_to_local
 
     def process(self, chat):
         self.file.write(f"{self.video_id} {chat.id.replace('%3D', '=')} {chat.datetime} {chat.message}\n")
@@ -46,4 +42,5 @@ class FilesystemWriter(Writer):
                 json.dump(stream, f, indent=4, ensure_ascii=False)
 
     def finalise(self):
-        self.file.close()
+        if self.video_id:
+            self.file.close()

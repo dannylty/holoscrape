@@ -5,13 +5,13 @@ from .base import Indexer
 
 class NijisanjiIndexer(Indexer):
     def get_streams(self):
-        if not hasattr(self.configs, 'apikey'):
+        if not hasattr(self.configs, 'holodex_apikey'):
             return []
         apikey = self.configs.holodex_apikey
 
         try:
             streams = requests.get("https://holodex.net/api/v2/live?type=placeholder%2Cstream&org=Nijisanji", headers={"X-APIKEY": apikey}).json()
-        except:
+        except Exception:
             return []
 
         ret = []

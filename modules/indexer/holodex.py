@@ -11,7 +11,7 @@ class HolodexIndexer(Indexer):
 
         try:
             streams = requests.get("https://holodex.net/api/v2/live?type=placeholder%2Cstream&org=Hololive", headers={"X-APIKEY": apikey}).json()
-        except:
+        except Exception:
             return []
 
         ret = []

@@ -43,11 +43,7 @@ class DatabaseWriter(Writer):
 
     @staticmethod
     def check_config_enabled(config: config.ConfigHandler):
-        if not hasattr(config, 'write_to_db'):
-            self.logger.warning("config has no attribute for DatabaseWriter")
-            return False
-        
-        return config.write_to_db
+        return hasattr(config, 'write_to_db') and config.write_to_db
 
     def generate_batch(self):
         self.next_batch = randint(30,100)
@@ -77,8 +73,7 @@ class DatabaseWriter(Writer):
             self.logger.error(str(e))
 
     def post(self):
-        self.logger.info(f"posting {self.next_batch} chats...")
-        print(f"posting {self.next_batch} chats...")
+        self.logger.info(f"posting {len(self.chat_buffer)} chats...")
         try:
             query = r'INSERT INTO ' + self.db_table + '_' + self.shard + r' VALUES (%s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE source = CONCAT(source, ' + f"' {self.hostname}\')"
             self.cursor.executemany(query, self.chat_buffer)
@@ -86,7 +81,6 @@ class DatabaseWriter(Writer):
         except Exception as e:
             self.logger.error(str(e))
         self.logger.info("done")
-        print("done")
 
     def finalise(self):
         self.post()
