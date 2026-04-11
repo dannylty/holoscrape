@@ -6,7 +6,7 @@
 
 [![Tests](https://github.com/dannylty/holoscrape/actions/workflows/tests.yaml/badge.svg)](https://github.com/dannylty/holoscrape/actions/workflows/tests.yaml)
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
-[![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/) 
+[![Python 3.14](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/downloads/release/python-3144/) 
 
 
 ## Main Features
