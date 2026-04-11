@@ -21,10 +21,11 @@ def main():
 
     ### INITIALIZE LIBTMUX ###
     server = libtmux.Server()
-    session = server.find_where({"session_name": "holoscrape"})
+    session = server.sessions.get(session_name="holoscrape", default=None)
     if not session:
         session = server.new_session("holoscrape", window_name="main.py")
-    window = session.list_windows()[0]
+    window = session.windows[0]
+    window.resize(width=220, height=50)
     url_to_pane = {}
 
     stream_indexers = (HolodexIndexer(config_handler), NijisanjiIndexer(config_handler))
@@ -63,10 +64,7 @@ def main():
         for url in urls:
             in_dict = url in url_to_pane
             if in_dict:
-                try:
-                    has_pane = window.get_by_id(url_to_pane[url]) is not None
-                except libtmux.exc.LibTmuxException:
-                    has_pane = True
+                has_pane = window.panes.get(pane_id=url_to_pane[url], default=None) is not None
             else:
                 has_pane = False
 
@@ -82,9 +80,14 @@ def main():
                 print(f"{now()} {url} started")
                 log.write(f"{now()} {url} started\n")
 
-            id = window.split_window(shell=f"python3 {os.path.dirname(os.path.realpath(__file__))}/scrape.py {url} {url}").id
-            session.list_windows()[0].select_layout('tiled')
-            url_to_pane[url] = id
+            try:
+                pane_id = window.split(shell=f"python3 {os.path.dirname(os.path.realpath(__file__))}/scrape.py {url} {url}").pane_id
+            except libtmux.exc.LibTmuxException as e:
+                print(f"{now()} {url} failed to split pane: {e}")
+                log.write(f"{now()} {url} failed to split pane: {str(e)}\n")
+                continue
+            window.select_layout('tiled')
+            url_to_pane[url] = pane_id
 
         sleep(60)
 

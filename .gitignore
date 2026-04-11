@@ -5,6 +5,8 @@
 ./logs
 ./.vs
 ./scripts
+./venv
+./.venv
 
 *.txt
 *.log
