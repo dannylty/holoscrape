@@ -1,11 +1,8 @@
 import pytest
-import sys
-
-sys.path.append('..')
-
 from modules.config import get_configs
 
-def test_get_configs():
+def test_get_configs(monkeypatch):
+    monkeypatch.setenv('HOLOSCRAPE_CONFIG', 'tests/config.json')
     configs = get_configs()
     assert configs is not None
     assert not configs.write_to_db

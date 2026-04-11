@@ -14,8 +14,10 @@ def now():
     return datetime.now().strftime("%d/%m/%y %H:%M:%S")
 
 class Scraper:
-    def __init__(self, video_id):
+    def __init__(self, video_id, max_messages=None, max_duration_seconds=None):
         self.video_id = video_id
+        self.max_messages = max_messages
+        self.max_duration_seconds = max_duration_seconds
         self.config = config.get_configs()
         self.logger = createLogger(logging.INFO, video_id, "holoscrape")
 
@@ -30,6 +32,15 @@ class Scraper:
         if len(self.writers) <= 0:
             self.logger.error("no writers configured")
             sys.exit(1)
+
+        self.start_time = None
+
+    def should_stop(self, idx):
+        if self.max_messages is not None and idx >= self.max_messages:
+            return True
+        if self.max_duration_seconds is not None and self.start_time is not None and time.time() - self.start_time >= self.max_duration_seconds:
+            return True
+        return False
 
     def get_video(self):
         self.video = None
@@ -54,6 +65,7 @@ class Scraper:
         
         retries = 0
         idx = 0
+        self.start_time = time.time()
         while True:
             if self.video.is_replay(): 
                 self.logger.info(f"{now()} {self.video_id} replay detected")
@@ -66,8 +78,17 @@ class Scraper:
 
                     for writer in self.writers:
                         writer.process(c)
+
+                    if self.should_stop(idx):
+                        break
                 
+                if self.should_stop(idx):
+                    break
+
                 time.sleep(1)
+
+            if self.should_stop(idx):
+                break
 
             try:
                 self.video.raise_for_status()

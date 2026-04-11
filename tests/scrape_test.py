@@ -1,18 +1,10 @@
+import json
 import os
-import sys
 import tempfile
 from unittest.mock import MagicMock
 
-sys.path.append('..')
-
 from modules.writer.filesystem import FilesystemWriter
-
-def _make_config(local_path, log_path):
-    c = MagicMock()
-    c.write_to_local = True
-    c.local_path = local_path
-    c.log_path = log_path
-    return c
+from modules.config import ConfigHandler
 
 def _make_chat(video_id="testVideoId"):
     chat = MagicMock()
@@ -21,11 +13,16 @@ def _make_chat(video_id="testVideoId"):
     chat.message = "hello world"
     return chat
 
-def test_filesystem_writer_creates_file_and_writes():
+def test_filesystem_writer_creates_file_and_writes(monkeypatch):
     with tempfile.TemporaryDirectory() as tmpdir:
         os.makedirs(os.path.join(tmpdir, "simple"))
         os.makedirs(os.path.join(tmpdir, "logs"))
-        config = _make_config(tmpdir, os.path.join(tmpdir, "logs"))
+        
+        config_path = os.path.join(tmpdir, 'config.json')
+        with open(config_path, 'w') as f:
+            json.dump({"write_to_db": False, "write_to_local": True, "local_path": tmpdir, "log_path": os.path.join(tmpdir, "logs")}, f)
+        monkeypatch.setenv('HOLOSCRAPE_CONFIG', config_path)
+        config = ConfigHandler(config_path)
 
         writer = FilesystemWriter(config, "testVideoId")
         writer.process(_make_chat())
@@ -37,11 +34,16 @@ def test_filesystem_writer_creates_file_and_writes():
         assert "testVideoId" in content
         assert "hello world" in content
 
-def test_filesystem_writer_file_closed_after_finalise():
+def test_filesystem_writer_file_closed_after_finalise(monkeypatch):
     with tempfile.TemporaryDirectory() as tmpdir:
         os.makedirs(os.path.join(tmpdir, "simple"))
         os.makedirs(os.path.join(tmpdir, "logs"))
-        config = _make_config(tmpdir, os.path.join(tmpdir, "logs"))
+        
+        config_path = os.path.join(tmpdir, 'config.json')
+        with open(config_path, 'w') as f:
+            json.dump({"write_to_db": False, "write_to_local": True, "local_path": tmpdir, "log_path": os.path.join(tmpdir, "logs")}, f)
+        monkeypatch.setenv('HOLOSCRAPE_CONFIG', config_path)
+        config = ConfigHandler(config_path)
 
         writer = FilesystemWriter(config, "testVideoId")
         writer.finalise()
