@@ -1,4 +1,4 @@
-libtmux
+libtmux<0.15
 mysql_connector_python
 pytchat
 requests

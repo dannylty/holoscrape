@@ -14,6 +14,7 @@ class DatabaseWriter(Writer):
 
         self.conn = db.connect(
             host=config.db_host,
+            port=config.db_port,
             user=config.db_user,
             password=config.db_password,
             database=config.db_database
@@ -44,9 +45,8 @@ class DatabaseWriter(Writer):
     @staticmethod
     def check_config_enabled(config: config.ConfigHandler):
         if not hasattr(config, 'write_to_db'):
-            self.logger.warning("config has no attribute for DatabaseWriter")
             return False
-        
+
         return config.write_to_db
 
     def generate_batch(self):
@@ -70,7 +70,8 @@ class DatabaseWriter(Writer):
 
     def process_stream(self, stream):
         try:
-            self.cursor.execute(r'REPLACE INTO stream_tab(id, title, topic_id,  channel_id, channel_name) VALUES(%s, %s, %s, %s, %s)',
+            query = f'REPLACE INTO {self.db_stream_table}(id, title, topic_id, channel_id, channel_name) VALUES(%s, %s, %s, %s, %s)'
+            self.cursor.execute(query,
                     (stream['id'], stream['title'], stream.get('topic_id', None), stream['channel']['id'], stream['channel']['name']))
             self.conn.commit()
         except Exception as e:

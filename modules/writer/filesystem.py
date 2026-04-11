@@ -15,11 +15,11 @@ class FilesystemWriter(Writer):
         
     def validate_configs(self, c: config.ConfigHandler):
         if not hasattr(c, 'local_path'):
-            self.logging.error("local_path missing")
+            self.logger.error("local_path missing")
             return False
 
         if not os.path.exists(c.local_path):
-            self.logging.error("local_path not a valid directory")
+            self.logger.error("local_path not a valid directory")
             return False
 
         return True
@@ -27,9 +27,8 @@ class FilesystemWriter(Writer):
     @staticmethod
     def check_config_enabled(c: config.ConfigHandler):
         if not hasattr(c, 'write_to_local'):
-            self.logging.warning('config has no attribute for FilesystemWriter')
             return False
-        
+
         return c.write_to_local
 
     def process(self, chat):

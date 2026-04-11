@@ -65,7 +65,7 @@ def main():
             if in_dict:
                 try:
                     has_pane = window.get_by_id(url_to_pane[url]) is not None
-                except:
+                except libtmux.exc.LibTmuxException:
                     has_pane = True
             else:
                 has_pane = False

@@ -36,7 +36,7 @@ If `write_to_db` or `write_to_local` is `false`, their respective subconfigs can
     "db_port": <port>,
     "db_user": "username",
     "db_password": "password",
-    "db_database": "password",
+    "db_database": "holoscrape",
     "db_table": "example_tab",
     "db_stream_table": "stream_tab",
     "db_nshards": 30,

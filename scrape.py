@@ -19,10 +19,6 @@ class Scraper:
         self.config = config.get_configs()
         self.logger = createLogger(logging.INFO, video_id, "holoscrape")
 
-        log_path = os.path.join(self.config.log_path, video_id + ".log")
-        with open(log_path, 'w+') as f:
-            pass
-
         self.writers = []
 
         if DatabaseWriter.check_config_enabled(self.config):
@@ -33,22 +29,23 @@ class Scraper:
 
         if len(self.writers) <= 0:
             self.logger.error("no writers configured")
-            quit()
-    
+            sys.exit(1)
+
     def get_video(self):
         self.video = None
-        for _ in range(5):
+        for attempt in range(5):
             try:
                 self.video = pytchat.create(video_id=self.video_id)
                 break
             except pytchat.exceptions.InvalidVideoIdException:
+                time.sleep(2 ** attempt)
                 continue
             except Exception as e:
                 self.logger.error(str(e))
-                quit()
+                sys.exit(1)
         if self.video is None:
             self.logger.error("can't retrieve video")
-            quit()
+            sys.exit(1)
 
     def run(self):
         self.get_video()
@@ -81,6 +78,7 @@ class Scraper:
                 
             except Exception as e:
                 if retries < 5:
+                    time.sleep(2 ** retries)
                     self.video = pytchat.create(video_id=self.video_id)
                     retries += 1
                     self.logger.warning(f"{now()} {self.video_id} live {type(e)} {str(e)} retrying...")
