@@ -2,7 +2,7 @@
     "write_to_db": true,
     "db_host": "192.168.1.100",
     "db_port": 3306,
-    "db_user": "user",
+    "db_user": "holoscrape",
     "db_password": "password",
     "db_database": "holoscrape",
     "db_table": "chat_tab",
@@ -10,5 +10,12 @@
     "db_nshards": 30,
     "write_to_local": true,
     "local_path": "/var/log/hololive/data/",
-    "log_path": "/var/log/hololive/logs/"
+    "log_path": "/var/log/hololive/logs/",
+    "log_level": "INFO",
+    "poll_interval": 60,
+    "max_concurrent_streams": 10,
+    "indexers": [
+        {"type": "holodex", "org": "Hololive"},
+        {"type": "holodex", "org": "Nijisanji", "filter": "EN"}
+    ]
 }

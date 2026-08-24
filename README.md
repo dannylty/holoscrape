@@ -5,52 +5,114 @@
 <p align="center"><kbd><img src="https://user-images.githubusercontent.com/63136392/201944147-5576e35c-a241-471c-b0bd-1110b08a3cca.png" width="828" height="507"/></kbd></p>
 
 [![Tests](https://github.com/dannylty/holoscrape/actions/workflows/tests.yaml/badge.svg)](https://github.com/dannylty/holoscrape/actions/workflows/tests.yaml)
-[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
-[![Python 3.14](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/downloads/release/python-3144/) 
-
+[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 
 ## Main Features
-* <b>Automatically detect existing livestreams.</b> Polling will be done periodically to the specified indexers. The indexers are in charge of generating live YouTube video-ids to be scraped.
-* <b>Dispatch to tmux panes in real time.</b> Display current streams in an interactive pane which will grow or shrink in size as live streams come and go.
-* <b>Customisable processors</b>. Write to a database, write to files, or create your own processor.
-* <b>Customisable indexers</b>. Don't follow Hololive? Write your own indexers instead to produce video-ids of your favourite streamers.
+* **Automatically detect existing livestreams.** Polls configured indexers (Holodex API) on an interval.
+* **Dispatch to tmux panes or subprocesses in real time.** Each live stream gets its own scraper process.
+* **Customisable writers.** Write to MySQL, write to local files, or create your own.
+* **Configurable indexers.** Specify which organisations and channel filters to track.
+* **Graceful shutdown.** SIGTERM/SIGINT handled cleanly; buffers are flushed before exit.
+* **Log rotation.** Per-stream log files with size-based rotation.
 
 ## How To
+
 ### Installing Requirements
 ```
-sudo apt install tmux
+sudo apt install tmux   # only needed for tmux mode
 pip3 install -r requirements.txt
 ```
+
 ### Configuring
-The in-built Holodex indexers require API keys to be supplied, and they are given by
-the env var `HOLODEX_API_KEY`.
 
-Config reading defaults to `config.json`.
+The in-built Holodex indexer requires an API key via the env var `HOLODEX_API_KEY`.
 
-If `write_to_db` or `write_to_local` is `false`, their respective subconfigs can be omitted.
+Config reading defaults to `config.json` (override with `HOLOSCRAPE_CONFIG` env var).
 
-```
+```json
 {
-    "write_to_db": true, <-- Mandatory
-    "db_host": <host>,
-    "db_port": <port>,
-    "db_user": "username",
+    "write_to_db": true,
+    "db_host": "192.168.1.100",
+    "db_port": 3306,
+    "db_user": "holoscrape",
     "db_password": "password",
     "db_database": "holoscrape",
-    "db_table": "example_tab",
+    "db_table": "chat_tab",
     "db_stream_table": "stream_tab",
     "db_nshards": 30,
 
-    "write_to_local": true, <-- Mandatory
-    "local_path": "/path/to/data/",
+    "write_to_local": true,
+    "local_path": "/var/log/hololive/data/",
 
-    "log_path": "/path/to/logs/", <-- Mandatory
+    "log_path": "/var/log/hololive/logs/",
+    "log_level": "INFO",
+    "log_format": "text",
+
+    "poll_interval": 60,
+    "max_concurrent_streams": 10,
+
+    "indexers": [
+        {"type": "holodex", "org": "Hololive"},
+        {"type": "holodex", "org": "Nijisanji", "filter": "EN"}
+    ]
 }
 ```
-An example database schema is given in `init.sql` that works with the example configs above. If you don't know your way around it, just turn `write_to_db` off.
 
-### Running (in tmux)
+All fields except `log_path` are optional. If `indexers` is omitted, it defaults
+to Hololive + Nijisanji EN.
+
+If `write_to_db` is `false`, all `db_*` fields can be omitted.
+If `write_to_local` is `false`, `local_path` can be omitted.
+
+The DB password can be set via `HOLOSCRAPE_DB_PASSWORD` env var to avoid
+storing it in the config file.
+
+A database schema generator is provided:
+```
+python resources/generate_init_sql.py --nshards 30 --table chat_tab -o init.sql
+```
+
+### Running
+
+**tmux mode (default):**
 ```
 python3 main.py
-'ctrl-b s' to change to the scraping window
+# ctrl-b s to switch to the scraping window
 ```
+
+**subprocess mode (for systemd, docker, etc.):**
+```
+python3 main.py --no-tmux
+```
+
+**standalone scraper (single video):**
+```
+python3 scrape.py <video_id> [max_messages] [max_duration_seconds]
+```
+
+### Environment Variables
+
+| Variable | Purpose |
+|---|---|
+| `HOLODEX_API_KEY` | API key for the Holodex indexer |
+| `HOLOSCRAPE_CONFIG` | Path to config file (overrides CWD/project root search) |
+| `HOLOSCRAPE_DB_PASSWORD` | DB password (overrides config file value) |
+
+## Architecture
+
+```
+main.py          — poll loop, stream detection, process management
+scrape.py        — single-video scraper (pytchat → writers)
+modules/
+  config.py      — config loading + validation
+  utils.py       — shared helpers
+  indexer/       — stream discovery (Holodex API)
+  writer/        — output (MySQL, filesystem)
+  logger/        — rotating file logger
+```
+
+The main process polls indexers every `poll_interval` seconds. When a new
+live stream is detected, it spawns a `scrape.py` subprocess (or tmux pane).
+When the stream disappears from the indexer results, the scraper is
+allowed to finish naturally.

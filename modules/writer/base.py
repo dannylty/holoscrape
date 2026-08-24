@@ -1,26 +1,44 @@
+"""Abstract base class for stream/chat writers.
+
+A writer receives either individual chat messages (`process`) or stream
+metadata (`process_stream`) and persists them to some backend.
+"""
+
 import logging
+from abc import ABC, abstractmethod
+from typing import Any, Optional
 
-from modules import config
-from modules.logger.base import createLogger
+from ..config import ConfigHandler
+from ..logger.base import createLogger
 
-class Writer:
-    def __init__(self, c: config.ConfigHandler, video_id: str):
-        self.configs = c
+
+class Writer(ABC):
+    """Base class for all output writers."""
+
+    def __init__(self, configs: ConfigHandler, video_id: Optional[str]) -> None:
+        self.configs = configs
         self.video_id = video_id
-        self.logger = createLogger(logging.INFO, video_id, __name__)
+        self.logger = createLogger(logging.INFO, video_id, self.__class__.__name__)
 
-        if not self.validate_configs(c):
-            raise Exception()
+    @staticmethod
+    @abstractmethod
+    def check_config_enabled(configs: ConfigHandler) -> bool:
+        """Return True if this writer is enabled in the given configuration."""
+        ...
 
-    def validate_configs(self, config: config.ConfigHandler):
-        return True
+    @abstractmethod
+    def process(self, chat: Any) -> None:
+        """Process a single chat message."""
+        ...
 
-    @staticmethod    
-    def check_config_enabled(config: config.ConfigHandler):
+    def process_stream(self, stream: dict[str, Any]) -> None:
+        """Process stream metadata (called when a new stream is detected).
+
+        Default implementation is a no-op. Override in subclasses that
+        need to persist stream-level information.
+        """
         pass
 
-    def process(self, chats):
-        pass
-
-    def finalise(self):
+    def finalise(self) -> None:
+        """Flush and close any open resources. Called when a stream ends."""
         pass

@@ -1,95 +1,260 @@
-from datetime import datetime
-import libtmux
-from time import sleep
-import os
+"""holoscrape main entry point.
 
-from modules.config import get_configs
+Polls configured indexers for live streams and dispatches scrapers for
+each new stream. Supports two backends:
+  - tmux (default): each scraper runs in its own tmux pane
+  - subprocess (--no-tmux): each scraper runs as a child process
+
+Usage:
+    python main.py              # tmux mode (default)
+    python main.py --no-tmux    # subprocess mode (for systemd, etc.)
+"""
+
+import argparse
+import os
+import signal
+import subprocess
+import sys
+import time
+from typing import Optional
+
+from modules import config
 from modules.indexer.holodex import HolodexIndexer
-from modules.indexer.nijidex import NijisanjiIndexer
+from modules.logger.base import createLogger
+from modules.utils import now
 from modules.writer.database import DatabaseWriter
 from modules.writer.filesystem import FilesystemWriter
 
-def now():
-    return datetime.now().strftime("%d/%m/%y %H:%M:%S")
-    
 
-def main():
-    config_handler = get_configs()
+def build_indexers(cfg: config.ConfigHandler) -> list:
+    """Instantiate indexers from the configuration."""
+    indexers = []
+    for ic in cfg.indexers:
+        if ic.type == "holodex":
+            indexers.append(HolodexIndexer(cfg, ic))
+        else:
+            print(f"Warning: unknown indexer type '{ic.type}', skipping", file=sys.stderr)
+    return indexers
 
-    os.makedirs(os.path.join(config_handler.log_path), exist_ok=True)
-    log = open(os.path.join(config_handler.log_path, "main.log"), "a+")
 
-    ### INITIALIZE LIBTMUX ###
-    server = libtmux.Server()
-    session = server.sessions.get(session_name="holoscrape", default=None)
-    if not session:
-        session = server.new_session("holoscrape", window_name="main.py")
-    window = session.windows[0]
-    window.resize(width=220, height=50)
-    url_to_pane = {}
-
-    stream_indexers = (HolodexIndexer(config_handler), NijisanjiIndexer(config_handler))
+def build_stream_writers(cfg: config.ConfigHandler) -> list:
+    """Instantiate writers that handle stream-level events (metadata)."""
     writers = []
-    if config_handler.write_to_db:
-        writers.append(DatabaseWriter(config_handler, None))
-    if config_handler.write_to_local:
-        for folder in ['simple', 'metadata']:
-            os.makedirs(os.path.join(config_handler.local_path, folder), exist_ok=True)
-        writers.append(FilesystemWriter(config_handler, None))
+    if DatabaseWriter.check_config_enabled(cfg):
+        writers.append(DatabaseWriter(cfg, None))
+    if FilesystemWriter.check_config_enabled(cfg):
+        writers.append(FilesystemWriter(cfg, None))
+    return writers
 
-    while True:
-        streams = []
-        for indexer in stream_indexers:
-            streams += indexer.get_streams()
+
+class TmuxManager:
+    """Manages scraper processes in tmux panes."""
+
+    def __init__(self) -> None:
+        import libtmux
+        self._libtmux = libtmux
+        self._server = libtmux.Server()
+        session = self._server.sessions.get(session_name="holoscrape", default=None)
+        if not session:
+            session = self._server.new_session("holoscrape", window_name="main.py")
+        self._window = session.windows[0]
+        self._window.resize(width=220, height=50)
+        self._url_to_pane: dict[str, str] = {}
+
+    def is_active(self, url: str) -> bool:
+        """Check if a pane for this URL is still alive."""
+        pane_id = self._url_to_pane.get(url)
+        if pane_id is None:
+            return False
+        return self._window.panes.get(pane_id=pane_id, default=None) is not None
+
+    def spawn(self, url: str, scrape_path: str) -> bool:
+        """Spawn a new tmux pane running the scraper for this URL."""
+        try:
+            pane = self._window.split(
+                shell=f"python3 {scrape_path} {url}"
+            )
+            self._window.select_layout("tiled")
+            self._url_to_pane[url] = pane.pane_id
+            return True
+        except self._libtmux.exc.LibTmuxException as e:
+            return False
+
+    def remove(self, url: str) -> None:
+        """Remove tracking for a URL (pane already dead)."""
+        self._url_to_pane.pop(url, None)
+
+    def tracked_urls(self) -> list[str]:
+        """Return all URLs currently being tracked."""
+        return list(self._url_to_pane.keys())
+
+    def kill_all(self) -> None:
+        """Kill all scraper panes."""
+        for url, pane_id in list(self._url_to_pane.items()):
+            try:
+                pane = self._window.panes.get(pane_id=pane_id, default=None)
+                if pane:
+                    pane.kill()
+            except Exception:
+                pass
+        self._url_to_pane.clear()
+
+
+class SubprocessManager:
+    """Manages scraper processes as child subprocesses (no tmux)."""
+
+    def __init__(self) -> None:
+        self._url_to_proc: dict[str, subprocess.Popen] = {}
+
+    def is_active(self, url: str) -> bool:
+        """Check if the subprocess for this URL is still running."""
+        proc = self._url_to_proc.get(url)
+        return proc is not None and proc.poll() is None
+
+    def spawn(self, url: str, scrape_path: str) -> bool:
+        """Spawn a new subprocess running the scraper for this URL."""
+        try:
+            proc = subprocess.Popen(
+                [sys.executable, scrape_path, url],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            self._url_to_proc[url] = proc
+            return True
+        except OSError:
+            return False
+
+    def remove(self, url: str) -> None:
+        """Stop tracking a URL (process already dead)."""
+        self._url_to_proc.pop(url, None)
+
+    def tracked_urls(self) -> list[str]:
+        """Return all URLs currently being tracked."""
+        return list(self._url_to_proc.keys())
+
+    def kill_all(self) -> None:
+        """Terminate all scraper subprocesses."""
+        for url, proc in list(self._url_to_proc.items()):
+            if proc.poll() is None:
+                proc.terminate()
+                try:
+                    proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+        self._url_to_proc.clear()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="holoscrape — YouTube live chat scraper")
+    parser.add_argument(
+        "--no-tmux",
+        action="store_true",
+        help="Run scrapers as subprocesses instead of tmux panes",
+    )
+    args = parser.parse_args()
+
+    cfg = config.get_configs()
+    errors = cfg.validate()
+    if errors:
+        for e in errors:
+            print(f"Config error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    os.makedirs(cfg.log_path, exist_ok=True)
+    logger = createLogger(cfg.log_level_enum, None, "main")
+
+    # Build components
+    indexers = build_indexers(cfg)
+    stream_writers = build_stream_writers(cfg)
+
+    # Create the process manager
+    if args.no_tmux:
+        manager = SubprocessManager()
+        logger.info("Running in subprocess mode (no tmux)")
+    else:
+        manager = TmuxManager()
+        logger.info("Running in tmux mode")
+
+    scrape_path = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "scrape.py"
+    )
+
+    # Signal handling for graceful shutdown
+    shutdown = {"requested": False}
+
+    def _signal_handler(signum, frame):
+        logger.info(f"Received signal {signum}, shutting down")
+        shutdown["requested"] = True
+
+    signal.signal(signal.SIGTERM, _signal_handler)
+    signal.signal(signal.SIGINT, _signal_handler)
+
+    logger.info(
+        f"Started: {len(indexers)} indexer(s), "
+        f"poll={cfg.poll_interval}s, max_streams={cfg.max_concurrent_streams}"
+    )
+
+    while not shutdown["requested"]:
+        # Poll all indexers
+        streams: list[dict] = []
+        for indexer in indexers:
+            try:
+                streams += indexer.get_streams()
+            except Exception as e:
+                logger.error(f"Indexer {type(indexer).__name__} failed: {e}")
+
         if not streams:
-            sleep(60)
+            time.sleep(cfg.poll_interval)
             continue
 
+        # Enforce max concurrent streams
+        active_count = sum(1 for s in streams if manager.is_active(s["id"]))
+        new_streams = [s for s in streams if not manager.is_active(s["id"])]
+        slots_available = cfg.max_concurrent_streams - active_count
+        if len(new_streams) > slots_available:
+            logger.info(
+                f"Max concurrent streams reached ({cfg.max_concurrent_streams}), "
+                f"queuing {len(new_streams) - slots_available} stream(s)"
+            )
+            new_streams = new_streams[:max(0, slots_available)]
+
+        # Write stream metadata
         for stream in streams:
-           for w in writers:
+            for w in stream_writers:
                 w.process_stream(stream)
 
-        urls = [s['id'] for s in streams]
+        # Detect finished streams (no longer in indexer results)
+        urls = [s["id"] for s in streams]
+        tracked_urls = manager.tracked_urls()
+        for url in tracked_urls:
+            if url not in urls:
+                logger.info(f"{now()} {url} finished")
+                manager.remove(url)
+            elif not manager.is_active(url):
+                logger.info(f"{now()} {url} pane/process died, will respawn")
+                manager.remove(url)
 
-        to_del = []
-        for u in url_to_pane.keys():
-            if u not in urls:
-                to_del.append(u)
-                print(f"{now()} {u} finished")
+        # Spawn new scrapers
+        for stream in new_streams:
+            url = stream["id"]
+            title = stream.get("title", "")
+            channel = stream.get("channel", {}).get("name", "")
+            logger.info(f"{now()} {url} started: [{channel}] {title[:60]}")
 
-        for u in to_del:
-            del url_to_pane[u]
-
-        ### ASSIGN TMUX PANES ###
-        for url in urls:
-            in_dict = url in url_to_pane
-            if in_dict:
-                has_pane = window.panes.get(pane_id=url_to_pane[url], default=None) is not None
+            if manager.spawn(url, scrape_path):
+                logger.info(f"  → scraper launched")
             else:
-                has_pane = False
+                logger.error(f"  → failed to launch scraper for {url}")
 
-            if has_pane:
-                continue
-            
-            if in_dict:
-                # we had a pane for this, livestream is still up, but pane is dead
-                print(f"{now()} {url} dropped, restarting")
-                log.write(f"{now()} {url} dropped, restarting\n")
+        time.sleep(cfg.poll_interval)
 
-            else:
-                print(f"{now()} {url} started")
-                log.write(f"{now()} {url} started\n")
+    # Cleanup
+    logger.info("Shutting down...")
+    manager.kill_all()
+    for w in stream_writers:
+        w.finalise()
+    logger.info("Done")
 
-            try:
-                pane_id = window.split(shell=f"python3 {os.path.dirname(os.path.realpath(__file__))}/scrape.py {url} {url}").pane_id
-            except libtmux.exc.LibTmuxException as e:
-                print(f"{now()} {url} failed to split pane: {e}")
-                log.write(f"{now()} {url} failed to split pane: {str(e)}\n")
-                continue
-            window.select_layout('tiled')
-            url_to_pane[url] = pane_id
 
-        sleep(60)
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

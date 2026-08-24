@@ -1,15 +1,7 @@
-./hololive
-./db
-./default_config.json
-./data
-./logs
-./.vs
-./scripts
-./venv
-./.venv
-
-*.txt
-*.log
+data/
+logs/
+test_data/
+test_logs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,4 +1,4 @@
-libtmux
-mysql_connector_python
-pytchat
-requests
+libtmux==0.62.0
+mysql-connector-python==26.7.0
+pytchat==0.5.5
+requests==2.34.2
